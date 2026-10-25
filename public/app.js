@@ -27,9 +27,9 @@ const CURRENCIES = {
   KZT: 500, UZS: 12600, AZN: 1.7, GEL: 2.7, AMD: 390, BYN: 3.2, MDL: 18.2, UAH: 41, RUB: 92,
   TRY: 32.4, IQD: 1310, JOD: 0.71, LBP: 89500, SYP: 13000, YER: 250, AFN: 72, IRR: 42000,
   OMR: 0.38, QAR: 3.64, KWD: 0.31, BHD: 0.38, AED: 3.67, SAR: 3.75, MRO: 36, GMD: 60,
-  GNF: 8600, LR$ 185: 1, MWK: 1050, MZN: 63, TZS: 2300, UGX: 3700, BWP: 13.5, ZMW: 26,
+  GNF: 8600, MWK: 1050, MZN: 63, TZS: 2300, UGX: 3700, BWP: 13.5, ZMW: 26,
   AOA: 825, XAF: 605, XOF: 605, XPF: 107, FJD: 2.2, PGK: 3.8, SB$: 8.3, VUV: 118, WST: 2.7,
-  TOP: 2.4, FJD: 2.2, PKR: 278, LKR: 298, BDT: 110, MVR: 15, NPR: 133, BTN: 83.5,
+  TOP: 2.4, PKR: 278, LKR: 298, BDT: 110, MVR: 15, NPR: 133, BTN: 83.5,
 };
 const CURRENCY_SYMBOL = {
   USD: "$", EUR: "€", GBP: "£", JPY: "¥", CNY: "¥", INR: "₹", KRW: "₩", CAD: "$", AUD: "$", CHF: "Fr",
@@ -40,7 +40,7 @@ const CURRENCY_SYMBOL = {
   VND: "₫", TWD: "NT$", BDT: "৳", PKR: "Rs", LKR: "Rs", NPR: "रु", MMK: "K", KHR: "៛", LAK: "₭",
   MNT: "₮", KZT: "₸", UZS: "so'm", AZN: "₼", GEL: "₾", AMD: "֏", BYN: "Br", MDL: "L", UAH: "₴",
   RUB: "₽", TRY: "₺", IQD: "د.ع", LBP: "£", SYP: "£", YER: "﷼", AFN: "؋", IRR: "﷼",
-  MRO: "UM", GMD: "D", GNF: "Fr", LR$: "L$", MWK: "MK", MZN: "MT", TZS: "Sh", UGX: "Sh",
+  MRO: "UM", GMD: "D", GNF: "Fr", MWK: "MK", MZN: "MT", TZS: "Sh", UGX: "Sh",
   BWP: "P", ZMW: "K", AOA: "Kz", XAF: "Fr", XOF: "Fr", XPF: "₣", FJD: "$", PGK: "K", SB$: "$",
   VUV: "Vt", WST: "T", TOP: "T$", BTN: "Nu.", MVR: "Rf", MNT: "₮",
 };
@@ -78,6 +78,19 @@ async function init() {
 
     const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
     state.catalog = data || [];
+
+    // Seed demo products if catalog is empty
+    if (state.catalog.length === 0) {
+      const demo = [
+        { name: "Nexus Suite", category: "app", tagline: "All-in-one productivity workspace", description: "Offline-first notes and tasks.", how: "Unzip and run.", price_cents: 4900, commission_rate: 10, currency: "USD", image_url: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Offline sync"], featured: true },
+        { name: "Forge CMS", category: "system", tagline: "Headless content system", description: "Lightweight headless CMS for teams.", how: "Deploy to any server.", price_cents: 12900, commission_rate: 15, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["REST + GraphQL"], featured: false },
+        { name: "Pulse Dashboard", category: "project", tagline: "Realtime analytics", description: "Analytics dashboard source project.", how: "Brand and deploy.", price_cents: 8900, commission_rate: 20, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Realtime charts"], featured: false },
+      ];
+      for (const p of demo) await supabase.from("products").insert(p);
+      const { data: d2 } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      state.catalog = d2 || [];
+    }
+
     const { data: pay } = await supabase.from("payments").select("*").single();
     state.payments = pay || { payPal: { clientId: "", currency: "USD" }, crypto: [], contact: {}, brand: {}, chat_ws: "" };
 
@@ -114,7 +127,6 @@ function renderPickers() {
   $("#currMenu").innerHTML = Object.entries(CURRENCIES).map(([k, v]) =>
     `<div class="curr-item${k === state.currency ? " active" : ""}" data-cur="${k}" role="menuitem">${CURRENCY_SYMBOL[k] || k} ${k}</div>`).join("");
 
-  // Language picker click
   const langPicker = $("#langPicker");
   const langMenu = $("#langMenu");
   langPicker.onclick = (e) => { e.stopPropagation(); langMenu.classList.toggle("open"); $("#currMenu").classList.remove("open"); };
@@ -412,7 +424,7 @@ function initChat() {
   const input = $("#chatIn");
   const send = $("#chatSend");
   if (!url) {
-    msgs.innerHTML = `<div class="msg msg-them"><div class="bubble them">Chat backend isn't configured yet.</div></div>`;
+    msgs.innerHTML = `<div class="msg msg-them"><div class="bubble them">Chat backend isn't configured yet. Contact us via the links below.</div></div>`;
     send.disabled = true; input.disabled = true;
     return;
   }
@@ -444,17 +456,16 @@ function setupCommissioner() {
     const token = $("#fCommToken").value.trim();
     const rate = Number($("#fCommRate").value || 15);
     if (!token) return toast("API token required", "err");
-    // Verify token against staff profiles
-    const { data, error } = await supabase.from("profiles").select("id, email, referral_code, commission_rate").eq("id", token).single();
+    const { data, error } = await supabase.from("profiles").select("id, email").eq("id", token).single();
     if (error || !data) return toast("Invalid staff token", "err");
     const affId = crypto.randomUUID();
     const { error: insErr } = await supabase.from("profiles").insert({
-      id: affId, email: data.email, role: "affiliate", referral_code: "aff-" + affId.slice(0,8),
+      id: affId, email: data.email, role: "affiliate", referral_code: "aff-" + affId.slice(0, 8),
       commission_rate: rate, created_at: new Date().toISOString(),
     });
     if (insErr) return toast(insErr.message, "err");
     $("#commResult").classList.remove("hidden");
-    const link = `${location.origin}#/buy?ref=${"aff-" + affId.slice(0,8)}`;
+    const link = `${location.origin}#/buy?ref=${"aff-" + affId.slice(0, 8)}`;
     $("#commLink").value = link;
     $("#commCopy").onclick = () => { navigator.clipboard.writeText(link); toast("Link copied", "ok"); };
     toast("Registered as commissioner ✓", "ok");
@@ -466,11 +477,6 @@ function setupCommissioner() {
   };
 }
 
-function renderNavCounts() {
-  const el = $("#cartPill");
-  el.classList.remove("hidden");
-  el.querySelector(".cart-count").textContent = state.catalog.length;
-}
 function toast(msg, cls = "") {
   document.querySelectorAll(".toastbox").forEach(t => t.remove());
   const d = document.createElement("div");
@@ -478,4 +484,3 @@ function toast(msg, cls = "") {
   document.body.appendChild(d);
   setTimeout(() => d.remove(), 3400);
 }
-renderNavCounts();
