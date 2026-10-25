@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://gstkasaosgwnqypirwhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzdGthc2Fvc2d3bnF5cGlyd2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNTI4OTQsImV4cCI6MjEwNzcyODg5NH0.Bzl-s_rb0UerU3U7zIRoPFNpubif9tkEAu6O_6tSOR8";
-const supabase = supabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -76,22 +76,10 @@ async function init() {
     const ref = qs.get("ref") || localStorage.getItem("pinc_ref");
     if (ref) { localStorage.setItem("pinc_ref", ref); state.affiliateCode = ref; }
 
-    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("products_public").select("*").order("updated_at", { ascending: false });
     state.catalog = data || [];
 
-    // Seed demo products if catalog is empty
-    if (state.catalog.length === 0) {
-      const demo = [
-        { name: "Nexus Suite", category: "app", tagline: "All-in-one productivity workspace", description: "Offline-first notes and tasks.", how: "Unzip and run.", price_cents: 4900, commission_rate: 10, currency: "USD", image_url: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Offline sync"], featured: true },
-        { name: "Forge CMS", category: "system", tagline: "Headless content system", description: "Lightweight headless CMS for teams.", how: "Deploy to any server.", price_cents: 12900, commission_rate: 15, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["REST + GraphQL"], featured: false },
-        { name: "Pulse Dashboard", category: "project", tagline: "Realtime analytics", description: "Analytics dashboard source project.", how: "Brand and deploy.", price_cents: 8900, commission_rate: 20, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Realtime charts"], featured: false },
-      ];
-      for (const p of demo) await supabase.from("products").insert(p);
-      const { data: d2 } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-      state.catalog = d2 || [];
-    }
-
-    const { data: pay } = await supabase.from("payments").select("*").single();
+    const { data: pay } = await supabase.from("payments").select("*").maybeSingle();
     state.payments = pay || { payPal: { clientId: "", currency: "USD" }, crypto: [], contact: {}, brand: {}, chat_ws: "" };
 
     applyI18n();
@@ -194,6 +182,7 @@ function routeTo(hash) {
   else if (hash.startsWith("#/buy/")) { const id = hash.split("/")[2]; openBuy(id); }
   else if (hash === "#/chat") { $("#view-chat").classList.remove("hidden"); }
   else if (hash === "#/commissioner") { $("#view-commissioner").classList.remove("hidden"); setupCommissioner(); }
+  else if (hash === "#/unlock") { $("#view-unlock").classList.remove("hidden"); setupUnlock(); }
   else { routeTo("#/"); }
   window.scrollTo(0, 0);
 }
@@ -396,25 +385,75 @@ function renderWallet(w) {
 
 async function submitOrder(method, meta) {
   if (!state.product) return;
-  const affiliateId = state.affiliateCode ? await resolveAffiliateId(state.affiliateCode) : null;
+  const email = ($("#buyerEmail")?.value || "").trim();
+  if (!email || email.indexOf("@") < 1 || email.indexOf(".") < 0) {
+    toast("Enter a valid email — it's how your download unlocks", "err");
+    return;
+  }
   const { data, error } = await supabase.rpc("create_order", {
     p_product_id: state.product.id,
-    p_buyer_email: "guest@pinc.network",
-    p_amount_cents: state.product.price_cents,
-    p_currency: state.product.currency || state.currency,
+    p_buyer_email: email,
     p_method: method,
-    p_affiliate_id: affiliateId,
+    p_affiliate_code: state.affiliateCode || null,
   });
   if (error) { toast("Order failed — contact us", "err"); return; }
+  if (data && data.error) { toast(data.error, "err"); return; }
+  const orderId = data && data.id ? data.id : null;
+  if (orderId) {
+    localStorage.setItem("pinc_last_order", orderId);
+    localStorage.setItem("pinc_last_email", email);
+  }
   $("#orderNote").classList.remove("hidden");
   const pane = document.getElementById("pane" + (method === "paypal" ? "Paypal" : "Crypto"));
-  if (pane) pane.innerHTML = `<div class="pay-note">✅ Order received. Our team verifies the payment and your download link will appear within 30 minutes.</div>`;
+  if (pane) pane.innerHTML = `
+    <div class="pay-note">✅ Order received — ID <strong class="mono">${esc(orderId || "")}</strong><br>
+    Save this ID. After our team confirms payment, unlock your download here:</div>
+    <a class="btn btn-primary btn-block mt" href="#/unlock">🔓 Check my download</a>`;
   toast("Order placed — awaiting confirmation", "ok");
 }
 
-async function resolveAffiliateId(code) {
-  const { data } = await supabase.from("profiles").select("id").eq("referral_code", code).single();
-  return data?.id || null;
+/* ── Download unlock ── */
+function setupUnlock() {
+  $("#uEmail").value = localStorage.getItem("pinc_last_email") || "";
+  $("#uOrder").value = localStorage.getItem("pinc_last_order") || "";
+  $("#uResult").innerHTML = "";
+  $("#uGo").onclick = async () => {
+    const email = $("#uEmail").value.trim();
+    const oid = $("#uOrder").value.trim();
+    if (!email || email.indexOf("@") < 1) return toast("Enter the email you ordered with", "err");
+    if (!oid) return toast("Enter your order ID", "err");
+    const { data, error } = await supabase.rpc("claim_download", { p_order_id: oid, p_email: email });
+    if (error) { if (/uuid/i.test(error.message)) return toast("Order ID looks invalid", "err"); return toast(error.message, "err"); }
+    const url = (Array.isArray(data) ? data[0] : data) || null;
+    $("#uResult").innerHTML = url
+      ? `<div class="pay-note">🎉 Payment confirmed — your file is ready:</div>
+         <a class="btn btn-primary btn-block mt" href="${esc(url)}" target="_blank" rel="noopener">⬇ Download your file</a>`
+      : `<div class="pay-note">⏳ Not unlocked yet. Once our team confirms your payment, this page will show your download automatically. Keep this order ID safe.</div>`;
+    toast(url ? "Download unlocked ✓" : "Checked — still awaiting confirmation", url ? "ok" : "");
+  };
+}
+
+/* ── Commissioner registration (token-based, no account) ── */
+function setupCommissioner() {
+  $("#commBack").onclick = () => routeTo("#/");
+  $("#commRegister").onclick = async () => {
+    const token = $("#fCommToken").value.trim();
+    const email = $("#fCommEmail").value.trim();
+    const rate = Number($("#fCommRate").value || 15);
+    if (!token) return toast("API token required", "err");
+    if (!email || email.indexOf("@") < 1) return toast("Enter your email", "err");
+    const { data, error } = await supabase.rpc("register_commissioner", {
+      p_staff_token: token, p_email: email, p_rate: rate,
+    });
+    if (error) return toast(error.message, "err");
+    const row = Array.isArray(data) ? data[0] : data;
+    const link = `${location.origin}/?ref=${row.code}`;
+    localStorage.setItem("pinc_comm_link", link);
+    $("#commResult").classList.remove("hidden");
+    $("#commLink").value = link;
+    $("#commCopy").onclick = () => { navigator.clipboard.writeText(link); toast("Link copied", "ok"); };
+    toast("Registered as commissioner ✓", "ok");
+  };
 }
 
 function initChat() {
@@ -447,34 +486,6 @@ function addMsg(kind, t) {
   if (kind === "sys") div.innerHTML = `<div class="bubble" style="background:var(--panel2);color:var(--dim);font-size:12px;border:none">${esc(t)}</div>`;
   else div.innerHTML = `<div class="bubble ${kind === "me" ? "me" : "them"}">${esc(t)}</div>`;
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
-}
-
-/* ── Commissioner registration ── */
-function setupCommissioner() {
-  $("#commBack").onclick = () => routeTo("#/");
-  $("#commRegister").onclick = async () => {
-    const token = $("#fCommToken").value.trim();
-    const rate = Number($("#fCommRate").value || 15);
-    if (!token) return toast("API token required", "err");
-    const { data, error } = await supabase.from("profiles").select("id, email").eq("id", token).single();
-    if (error || !data) return toast("Invalid staff token", "err");
-    const affId = crypto.randomUUID();
-    const { error: insErr } = await supabase.from("profiles").insert({
-      id: affId, email: data.email, role: "affiliate", referral_code: "aff-" + affId.slice(0, 8),
-      commission_rate: rate, created_at: new Date().toISOString(),
-    });
-    if (insErr) return toast(insErr.message, "err");
-    $("#commResult").classList.remove("hidden");
-    const link = `${location.origin}#/buy?ref=${"aff-" + affId.slice(0, 8)}`;
-    $("#commLink").value = link;
-    $("#commCopy").onclick = () => { navigator.clipboard.writeText(link); toast("Link copied", "ok"); };
-    toast("Registered as commissioner ✓", "ok");
-  };
-  $("#commCopy").onclick = () => {
-    const link = $("#commLink").value;
-    navigator.clipboard.writeText(link);
-    toast("Link copied", "ok");
-  };
 }
 
 function toast(msg, cls = "") {

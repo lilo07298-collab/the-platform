@@ -31,7 +31,7 @@
         </div>
         <div class="curr-menu hidden" id="currMenu" role="menu"></div>
         <div class="cart-pill hidden" id="cartPill"><span class="cart-count">0</span><span class="cart-label">cart</span></div>
-        <button class="btn btn-primary btn-sm" id="userBtn">Account</button>
+        <button class="btn btn-primary btn-sm" id="userBtn" onclick="location.hash='#/commissioner'">Earn 10–30% 💸</button>
         <button class="mobile-menu" id="mobileMenu" aria-label="Menu">☰</button>
       </div>
     </div>
@@ -104,6 +104,8 @@
             <span class="label" data-i18n="checkout.total">Total</span>
             <span class="amount" id="coAmount"></span>
           </div>
+          <label style="display:block;font-size:12px;color:var(--dim);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;font-weight:700">Your email (delivery & invoices)</label>
+          <input id="buyerEmail" type="email" placeholder="you@example.com" style="width:100%;padding:11px 13px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);margin-bottom:14px" />
           <div class="method-tabs">
             <button class="method-tab active" data-m="paypal">PayPal / Card</button>
             <button class="method-tab" data-m="crypto">Crypto wallet</button>
@@ -131,6 +133,23 @@
       </div>
     </section>
 
+    <!-- UNLOCK / MY DOWNLOADS -->
+    <section class="view view-unlock hidden" id="view-unlock">
+      <div class="wrap">
+        <button class="btn btn-ghost btn-sm back-btn" id="uBack" onclick="routeTo('#/')">← Back</button>
+        <div class="formcard">
+          <h2>🔓 Unlock my download</h2>
+          <p class="dim">Orders unlock automatically once our team confirms your payment.</p>
+          <label>Your email</label><input id="uEmail" type="email" placeholder="you@example.com" />
+          <label>Your order ID</label><input id="uOrder" type="text" placeholder="Paste the order ID you received at checkout" />
+          <div class="actions">
+            <button class="btn btn-primary btn-block" id="uGo">Check my download</button>
+          </div>
+          <div id="uResult" class="mt"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- COMMISSIONER -->
     <section class="view view-commissioner hidden" id="view-commissioner">
       <div class="wrap">
@@ -139,6 +158,7 @@
           <h2>Become a Commissioner</h2>
           <p class="dim">Earn 10–30% commission when someone buys through your link. No account needed — just your staff API token.</p>
           <label>Your API Token</label><input id="fCommToken" type="text" placeholder="Paste your staff API token" />
+          <label>Your email (for commission payouts)</label><input id="fCommEmail" type="email" placeholder="you@example.com" />
           <label>Your commission rate (%)</label><input id="fCommRate" type="number" min="10" max="30" value="15" />
           <div class="actions">
             <button class="btn btn-primary btn-block" id="commRegister">Register as Commissioner</button>
@@ -175,7 +195,7 @@
   <footer class="shell">
     <div class="wrap footer-inner">
       <div class="brand-foot"><span class="logo-mini">P·N</span> <b>Pinc Network</b></div>
-      <nav class="foot-nav"><a href="#/">Browse</a><a href="#/chat">Support chat</a><a href="#/commissioner">Become Commissioner</a></nav>
+      <nav class="foot-nav"><a href="#/">Browse</a><a href="#/chat">Support chat</a><a href="#/unlock">My downloads</a><a href="#/commissioner">Become Commissioner</a></nav>
       <div class="foot-copy">Pinc Network · Digital goods — all sales final after download.</div>
     </div>
   </footer>

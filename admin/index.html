@@ -146,7 +146,7 @@
           <label>What it is (description)</label><textarea id="fDescription" placeholder="What the buyer receives…"></textarea>
           <label>How it works</label><textarea id="fHow" placeholder="Install, run, configure…"></textarea>
           <div class="grid2">
-            <div><label>Main image (upload)</label><input id="fImageFile" type="file" accept="image/*" /><div class="file-hint">Uploads to cloud storage</div></div>
+            <div><label>Main image (upload or URL)</label><input id="fImageFile" type="file" accept="image/*" /><input id="fImage" type="text" placeholder="…or paste image URL" style="margin-top:8px" /></div>
             <div><label>Featured on home?</label><select id="fFeatured"><option value="0">No</option><option value="1">Yes</option></select></div>
           </div>
           <label>Screenshots (upload, one or more)</label><input id="fScreenshotFiles" type="file" accept="image/*" multiple style="margin-top:8px" />
@@ -224,7 +224,7 @@
           </div>
           <div class="actions"><button class="btn btn-primary" id="setRate">Set rate</button></div>
         </div>
-        <div class="note">Affiliates sign up with Google, get a referral link, and earn commission when someone buys using their link. You confirm payment → commission credits instantly → they can withdraw within 6 hours.</div>
+        <div class="note">Commissioners register on the store (Earn 10–30% button) using your staff API token + their email. You confirm orders → commission credits their balance automatically.</div>
       </div>
 
       <div class="danger-zone">
@@ -242,52 +242,57 @@
   <script>
     const SUPABASE_URL = "https://gstkasaosgwnqypirwhm.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzdGthc2Fvc2d3bnF5cGlyd2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNTI4OTQsImV4cCI6MjEwNzcyODg5NH0.Bzl-s_rb0UerU3U7zIRoPFNpubif9tkEAu6O_6tSOR8";
-    const supabase = supabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const $ = (s) => document.querySelector(s);
     const CAT = { system: "sys", product: "product", app: "app", project: "project" };
     let catalog = [], payments = null, orders = [], affiliates = [], products = [], editingId = null, notifs = [];
     const esc = (s = "") => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/admin/sw.js").catch(() => {});
-    const ml = document.createElement("link"); ml.rel = "manifest"; ml.href = "/admin/manifest.json"; document.head.appendChild(ml);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+    const ml = document.createElement("link"); ml.rel = "manifest"; ml.href = "manifest.json"; document.head.appendChild(ml);
 
-    /* ── API Token auth ── */
-    const stored = sessionStorage.getItem("pn_api_token") || "";
-    if (stored) { supabase.auth.setSession({ access_token: stored, refresh_token: stored, expires_in: 31536000, token_type: "bearer" }); }
-    if (!supabase.auth.getUser) { $("#loginView").classList.remove("hidden"); }
-    else {
-      supabase.auth.getUser().then(({ data: { user }, error }) => {
-        if (!user || error) { $("#loginView").classList.remove("hidden"); }
-        else { $("#consoleView").classList.remove("hidden"); $("#topbar").classList.remove("hidden"); $("#userChip").textContent = user.email || "Staff"; loadAll(); }
-      }).catch(() => { $("#loginView").classList.remove("hidden"); });
+    /* ── API Token auth (staff) ── */
+    let myToken = sessionStorage.getItem("pn_staff_token") || "";
+
+    async function staffLogin(token) {
+      if (!token) return false;
+      const { data, error } = await supabase.rpc("staff_list_profiles", { p_token: token });
+      if (error || !data || data.length === 0) return false;
+      sessionStorage.setItem("pn_staff_token", token);
+      myToken = token;
+      sessionStorage.setItem("pn_staff_email", data[0].email || "staff");
+      return true;
     }
 
-    $("#loginBtn").onclick = async () => {
-      const token = $("#tokenInput").value.trim();
-      if (!token) return toast("Enter your API token", "err");
-      sessionStorage.setItem("pn_api_token", token);
-      // Use token as the user id (staff profiles keyed by id = token)
-      const { data, error } = await supabase.from("profiles").select("id, email, role").eq("id", token).single();
-      if (error || !data) return toast("Invalid API token", "err");
+    function enterConsole() {
       $("#loginView").classList.add("hidden");
       $("#consoleView").classList.remove("hidden");
       $("#topbar").classList.remove("hidden");
-      $("#userChip").textContent = data.email || "Staff";
-      await loadAll();
+      $("#userChip").textContent = "🔓 " + (sessionStorage.getItem("pn_staff_email") || "staff");
+      loadAll();
+    }
+
+    if (myToken) staffLogin(myToken).then(ok => { if (ok) enterConsole(); });
+
+    $("#loginBtn").onclick = async () => {
+      const ok = await staffLogin($("#tokenInput").value.trim());
+      if (!ok) { toast("Invalid API token", "err"); $("#tokenInput").value = ""; return; }
+      enterConsole();
     };
-    $("#logoutBtn").onclick = () => { sessionStorage.removeItem("pn_api_token"); location.reload(); };
+    $("#logoutBtn").onclick = () => { sessionStorage.removeItem("pn_staff_token"); sessionStorage.removeItem("pn_staff_email"); location.reload(); };
 
     async function loadAll() {
-      [products, payments, orders, affiliates] = await Promise.all([
-        supabase.from("products").select("*").order("created_at", { ascending: false }),
-        supabase.from("payments").select("*").single(),
-        supabase.from("orders").select("*").order("created_at", { ascending: false }),
-        supabase.from("profiles").select("*").eq("role", "affiliate"),
+      const [prodRes, payRes, ordRes, profRes] = await Promise.all([
+        supabase.rpc("staff_list_products", { p_token: myToken }),
+        supabase.from("payments").select("*").maybeSingle(),
+        supabase.rpc("staff_list_orders", { p_token: myToken }),
+        supabase.rpc("staff_list_profiles", { p_token: myToken }),
       ]);
-      catalog = products.data || [];
-      payments = payments.data || {};
-      orders = orders.data || [];
-      affiliates = affiliates.data || [];
+      catalog = prodRes.data || [];
+      payments = payRes.data || { id: 1, payPal: {}, crypto: [], contact: {}, brand: {}, chat_ws: "" };
+      payments.id = 1;
+      orders = ordRes.data || [];
+      affiliates = (profRes.data || []).filter(x => x.role === "affiliate");
       renderTabs(); renderProducts(); fillPayments(); renderWallets(); renderOrders(); renderAffiliates(); renderDashboard();
     }
 
@@ -347,7 +352,7 @@
     }
 
     $("#fImageFile").onchange = async () => {
-      try { const u = await uploadFile("fImageFile", "products"); if (u) { /* store in fImage via input below */ } } catch (e) { toast(e.message, "err"); }
+      try { const u = await uploadFile("fImageFile", "products"); if (u) $("#fImage").value = u; } catch (e) { toast(e.message, "err"); }
     };
     $("#fScreenshotFiles").onchange = async () => {
       try {
@@ -367,8 +372,7 @@
     $("#saveProduct").onclick = async () => {
       const name = $("#fName").value.trim();
       if (!name) return toast("Name required", "err");
-      const product = {
-        id: editingId || crypto.randomUUID(),
+      const p = {
         name, category: $("#fCategory").value, tagline: $("#fTagline").value.trim(),
         description: $("#fDescription").value.trim(), how: $("#fHow").value.trim(),
         price_cents: Math.round(Number($("#fPrice").value || 0) * 100),
@@ -378,25 +382,21 @@
         docs: $("#fDocs").value.split("\n").map(l => { const [t, u] = l.split("|").map(s => s.trim()); return u ? { title: t || "Doc", url: u } : null; }).filter(Boolean),
         download_url: $("#fDownloadUrl").value.trim(),
         features: $("#fFeatures").value.split(",").map(s => s.trim()).filter(Boolean),
-        updated_at: new Date().toISOString(),
       };
-      if (editingId) {
-        const { error } = await supabase.from("products").upsert(product).eq("id", editingId);
-        if (error) return toast(error.message, "err");
-      } else {
-        const { error } = await supabase.from("products").insert(product);
-        if (error) return toast(error.message, "err");
-      }
+      if (editingId) p.id = editingId;
+      const { error } = await supabase.rpc("staff_save_product", { p_token: myToken, p });
+      if (error) return toast(error.message, "err");
       toast("Saved ✓ — store live", "ok");
       editingId = null; clearForm();
-      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase.rpc("staff_list_products", { p_token: myToken });
       catalog = data || []; renderProducts();
     };
     async function delProduct(id) {
       if (!confirm("Delete this product?")) return;
-      await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase.rpc("staff_delete_product", { p_token: myToken, p_id: id });
+      if (error) return toast(error.message, "err");
       toast("Deleted ✓", "ok");
-      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase.rpc("staff_list_products", { p_token: myToken });
       catalog = data || []; renderProducts();
     }
 
@@ -420,12 +420,16 @@
     }
     $("#addWallet").onclick = () => { payments.crypto.push({ label: "", symbol: "", address: "", icon: "🪙" }); renderWallets(); };
     $("#savePayments").onclick = async () => {
-      payments.payPal = { clientId: $("#pClientId").value.trim(), currency: ($("#pCurrency").value.trim() || "USD") };
-      payments.chat_ws = $("#pChatWs").value.trim();
-      payments.contact = { email: $("#cEmail").value.trim() };
-      payments.brand = { name: $("#bName").value.trim() || "Pinc Network", tagline: $("#bTagline").value.trim() };
-      const { error } = await supabase.from("payments").upsert(payments);
+      const cfg = {
+        payPal: { clientId: $("#pClientId").value.trim(), currency: ($("#pCurrency").value.trim() || "USD") },
+        crypto: payments.crypto || [],
+        contact: { email: $("#cEmail").value.trim() },
+        brand: { name: $("#bName").value.trim() || "Pinc Network", tagline: $("#bTagline").value.trim() },
+        chat_ws: $("#pChatWs").value.trim(),
+      };
+      const { error } = await supabase.rpc("staff_save_payments", { p_token: myToken, p: cfg });
       if (error) return toast(error.message, "err");
+      payments = { ...payments, ...cfg, id: 1 };
       toast("Settings saved ✓ — store live", "ok");
     };
 
@@ -469,36 +473,35 @@
       el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => delOrder(b.dataset.del));
     }
     async function markPaid(id) {
-      const o = orders.find(x => x.id === id);
-      if (!o) return;
-      const { error } = await supabase.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase.rpc("staff_update_order", { p_token: myToken, p_order: id, p_status: "paid" });
       if (error) return toast(error.message, "err");
-      addNotif(`Order ${id} marked paid`);
-      toast("Paid ✓ — buyer can download + commission credited", "ok");
-      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      addNotif(`Order ${id.slice(0,8)} marked paid — commission credited`);
+      toast("Paid ✓ — buyer unlocks download, affiliate credited", "ok");
+      const { data } = await supabase.rpc("staff_list_orders", { p_token: myToken });
       orders = data || []; renderOrders(); renderNotifs();
     }
     async function delOrder(id) {
       if (!confirm("Delete order?")) return;
-      await supabase.from("orders").delete().eq("id", id);
+      const { error } = await supabase.rpc("staff_delete_order", { p_token: myToken, p_id: id });
+      if (error) return toast(error.message, "err");
       toast("Deleted ✓", "ok");
-      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase.rpc("staff_list_orders", { p_token: myToken });
       orders = data || []; renderOrders();
     }
     $("#addOrder").onclick = async () => {
       const buyer = $("#oBuyer").value.trim();
       if (!buyer) return toast("Buyer required", "err");
-      const o = {
-        id: crypto.randomUUID(), buyer_email: buyer, product_name: $("#oProduct").value.trim(),
+      const payload = {
+        buyer_email: buyer, product_name: $("#oProduct").value.trim(),
         amount_cents: Math.round(Number($("#oAmount").value || 0) * 100), currency: "USD",
-        method: $("#oMethod").value, status: "pending", created_at: new Date().toISOString(),
+        method: $("#oMethod").value, status: "pending",
       };
-      const { error } = await supabase.from("orders").insert(o);
+      const { error } = await supabase.rpc("staff_add_order", { p_token: myToken, p: payload });
       if (error) return toast(error.message, "err");
-      addNotif(`New order ${o.id}`);
+      addNotif("New manual order recorded");
       toast("Order recorded ✓", "ok");
       ["oBuyer","oProduct","oAmount"].forEach(i => $("#"+i).value = "");
-      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase.rpc("staff_list_orders", { p_token: myToken });
       orders = data || []; renderOrders();
     };
 
@@ -514,18 +517,18 @@
           <button class="btn btn-ghost btn-sm" data-copy="${esc(a.referral_code)}">Copy link</button>
         </div>`).join("");
       el.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
-        navigator.clipboard.writeText(`${location.origin}#/product?ref=${b.dataset.copy}`);
+        navigator.clipboard.writeText(`${location.origin}/?ref=${b.dataset.copy}`);
         toast("Affiliate link copied", "ok");
       });
     }
     $("#setRate").onclick = async () => {
       const email = $("#aEmail").value.trim();
       const rate = Number($("#aRate").value || 10);
-      const { error } = await supabase.from("profiles").update({ commission_rate: rate }).eq("email", email);
+      const { error } = await supabase.rpc("staff_set_rate", { p_token: myToken, p_email: email, p_rate: rate });
       if (error) return toast(error.message, "err");
       toast("Rate updated ✓", "ok");
-      const { data: aff } = await supabase.from("profiles").select("*").eq("role", "affiliate");
-      affiliates = aff || []; renderAffiliates();
+      const { data } = await supabase.rpc("staff_list_profiles", { p_token: myToken });
+      affiliates = (data || []).filter(x => x.role === "affiliate"); renderAffiliates();
     };
 
     function addNotif(text) {
@@ -554,14 +557,16 @@
     $("#clearNotif").onclick = () => { notifs = []; renderNotifs(); updateBell(); toast("Cleared", "ok"); };
 
     $("#wipeDemo").onclick = async () => {
-      if (!confirm("Wipe all demo products and orders?")) return;
-      await supabase.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-      await supabase.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (!confirm("Wipe all products and orders?")) return;
+      for (const p of catalog) {
+        await supabase.rpc("staff_delete_product", { p_token: myToken, p_id: p.id });
+      }
+      for (const o of orders) {
+        await supabase.rpc("staff_delete_order", { p_token: myToken, p_id: o.id });
+      }
       toast("Wiped ✓", "ok");
-      const { data } = await supabase.from("products").select("*");
-      catalog = data || []; renderProducts();
-      const { data: ord } = await supabase.from("orders").select("*");
-      orders = ord || []; renderOrders();
+      catalog = []; renderProducts();
+      orders = []; renderOrders();
     };
     $("#restoreDemo").onclick = async () => {
       const demo = [
@@ -569,9 +574,9 @@
         { name: "Forge CMS", category: "system", tagline: "Headless CMS", description: "Lightweight headless content system.", how: "Deploy anywhere.", price_cents: 12900, commission_rate: 15, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["REST + GraphQL"], featured: false },
         { name: "Pulse Dashboard", category: "project", tagline: "Realtime analytics", description: "Analytics dashboard source.", how: "Brand and deploy.", price_cents: 8900, commission_rate: 20, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Realtime charts"], featured: false },
       ];
-      for (const p of demo) await supabase.from("products").insert(p);
+      for (const p of demo) await supabase.rpc("staff_save_product", { p_token: myToken, p });
       toast("Demo restored ✓", "ok");
-      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase.rpc("staff_list_products", { p_token: myToken });
       catalog = data || []; renderProducts();
     };
 
