@@ -16,18 +16,49 @@ const state = {
   user: null,
 };
 
-const CURRENCIES = { USD: 1, KES: 130, NGN: 1500, GBP: 0.79, EUR: 0.92, AED: 3.67, CNY: 7.2, INR: 83 };
-const CURRENCY_SYMBOL = { USD: "$", KES: "Sh", NGN: "₦", GBP: "£", EUR: "€", AED: "د.إ", CNY: "¥", INR: "₹" };
-const LANGS = { en: "English", sw: "Kiswahili", fr: "Français", es: "Español", ar: "العربية", zh: "中文" };
+const CURRENCIES = {
+  USD: 1, EUR: 0.92, GBP: 0.79, JPY: 149.5, CNY: 7.2, INR: 83.5, KRW: 1385, CAD: 1.36, AUD: 1.54, CHF: 0.89,
+  SGD: 1.35, HKD: 7.81, SEK: 10.6, NOK: 10.9, DKK: 6.85, PLN: 4.0, CZK: 23.1, HUF: 367, ILS: 3.7,
+  AED: 3.67, SAR: 3.75, QAR: 3.64, KWD: 0.31, BHD: 0.38, OMR: 0.38, JOD: 0.71, EGP: 30.9, MAD: 10.0,
+  TND: 3.1, DZD: 135, KES: 130, NGN: 1500, GHS: 12.5, ZAR: 18.7, BRL: 5.1, ARS: 910, CLP: 945,
+  COP: 4050, PEN: 3.75, UYU: 39, MXN: 17.2, VES: 36, PHP: 56.5, THB: 35.6, MYR: 4.7, IDR: 15600,
+  VND: 24700, SGD: 1.35, HKD: 7.81, TWD: 32.4, KRW: 1385, JPY: 149.5, CNY: 7.2, INR: 83.5,
+  BDT: 110, PKR: 278, LKR: 298, NPR: 133, MMK: 2100, KHR: 4100, LAK: 21000, MNT: 3450,
+  KZT: 500, UZS: 12600, AZN: 1.7, GEL: 2.7, AMD: 390, BYN: 3.2, MDL: 18.2, UAH: 41, RUB: 92,
+  TRY: 32.4, IQD: 1310, JOD: 0.71, LBP: 89500, SYP: 13000, YER: 250, AFN: 72, IRR: 42000,
+  OMR: 0.38, QAR: 3.64, KWD: 0.31, BHD: 0.38, AED: 3.67, SAR: 3.75, MRO: 36, GMD: 60,
+  GNF: 8600, LR$ 185: 1, MWK: 1050, MZN: 63, TZS: 2300, UGX: 3700, BWP: 13.5, ZMW: 26,
+  AOA: 825, XAF: 605, XOF: 605, XPF: 107, FJD: 2.2, PGK: 3.8, SB$: 8.3, VUV: 118, WST: 2.7,
+  TOP: 2.4, FJD: 2.2, PKR: 278, LKR: 298, BDT: 110, MVR: 15, NPR: 133, BTN: 83.5,
+};
+const CURRENCY_SYMBOL = {
+  USD: "$", EUR: "€", GBP: "£", JPY: "¥", CNY: "¥", INR: "₹", KRW: "₩", CAD: "$", AUD: "$", CHF: "Fr",
+  SGD: "$", HKD: "$", SEK: "kr", NOK: "kr", DKK: "kr", PLN: "zł", CZK: "Kč", HUF: "Ft", ILS: "₪",
+  AED: "د.إ", SAR: "ر.س", QAR: "ر.ق", KWD: "د.ك", BHD: "د.ب", OMR: "ر.ع", JOD: "د.ا", EGP: "£", MAD: "د.م",
+  TND: "د.ت", DZD: "د.ج", KES: "Sh", NGN: "₦", GHS: "₵", ZAR: "R", BRL: "R$", ARS: "$", CLP: "$",
+  COP: "$", PEN: "S/", UYU: "$", MXN: "$", VES: "Bs", PHP: "₱", THB: "฿", MYR: "RM", IDR: "Rp",
+  VND: "₫", TWD: "NT$", BDT: "৳", PKR: "Rs", LKR: "Rs", NPR: "रु", MMK: "K", KHR: "៛", LAK: "₭",
+  MNT: "₮", KZT: "₸", UZS: "so'm", AZN: "₼", GEL: "₾", AMD: "֏", BYN: "Br", MDL: "L", UAH: "₴",
+  RUB: "₽", TRY: "₺", IQD: "د.ع", LBP: "£", SYP: "£", YER: "﷼", AFN: "؋", IRR: "﷼",
+  MRO: "UM", GMD: "D", GNF: "Fr", LR$: "L$", MWK: "MK", MZN: "MT", TZS: "Sh", UGX: "Sh",
+  BWP: "P", ZMW: "K", AOA: "Kz", XAF: "Fr", XOF: "Fr", XPF: "₣", FJD: "$", PGK: "K", SB$: "$",
+  VUV: "Vt", WST: "T", TOP: "T$", BTN: "Nu.", MVR: "Rf", MNT: "₮",
+};
+const LANGS = {
+  en: "English", sw: "Kiswahili", fr: "Français", es: "Español", ar: "العربية", zh: "中文",
+  de: "Deutsch", ja: "日本語", ko: "한국어", pt: "Português", it: "Italiano", ru: "Русский",
+  hi: "हिन्दी", nl: "Nederlands", tr: "Türkçe", vi: "Tiếng Việt", th: "ไทย", id: "Bahasa Indonesia",
+  pl: "Polski", cs: "Čeština", el: "Ελληνικά", he: "עברית", ro: "Română",
+};
 const CAT = { system: ["🖥️", "System"], product: ["📦", "Product"], app: ["📱", "App"], project: ["🚀", "Project"] };
 
 const I18N = {
-  en: { hero: { title: "Pinc Network", sub: "Premium systems, apps, products & projects. Buy once, download forever.", cta: "Explore the catalog", chat: "Talk to the team" }, sections: { featured: "Featured", all: "All items" }, product: { what: "What it is", how: "How it works", docs: "Documentation", buy: "Buy now" }, checkout: { total: "Total" }, pay: { note: "Secure one-time payment. Our team confirms each order before downloads unlock.", cryptoNote: "Send the exact amount to the wallet below, then tap “I've sent it” to notify our team.", sent: "I've sent it", copy: "Copy address", copied: "Copied ✓" }, errors: { load: "Couldn't load the store. Please refresh in a moment." }, affiliate: { earn: "Earn commission", join: "Join as commissioner" } },
-  sw: { hero: { title: "Pinc Network", sub: "Mifumo ya kiufundi, bidhaa, programu na miradi. Teua mara moja, msoge milele.", cta: "Angalia kituo", chat: "Zungumza na timu" }, sections: { featured: "Vipengele", all: "Kituo chote" }, product: { what: "Nini yule", how: "Inavyofanya kazi", docs: "Hatua za matengenezo", buy: "Nunu sasa" }, checkout: { total: "Jumla" }, pay: { note: "Lipili moja moja. Timu yetu inatarajia kila amri kabla ya kupakua.", cryptoNote: "Tuma kiasi kamili kwenye waleti hapa chini, tisha “Nimesomboleza”.", sent: "Nimesomboleza", copy: "Nakili anwani", copied: "Inakopiwa ✓" }, errors: { load: "Hauwezi kuingia kwenye kituo. Bonyeza tena baada ya dakika moja." }, affiliate: { earn: "Pata kiwango", join: "Jioni kama mwakilishi" } },
-  fr: { hero: { title: "Pinc Network", sub: "Systèmes, applications, produits et projets premium. Achetez une fois, téléchargez pour toujours.", cta: "Voir le catalogue", chat: "Parler à l'équipe" }, sections: { featured: "En vedette", all: "Tous les articles" }, product: { what: "C'est quoi", how: "Comment ça marche", docs: "Documentation", buy: "Acheter maintenant" }, checkout: { total: "Total" }, pay: { note: "Paiement unique sécurisé. Notre équipe confirme chaque commande avant déblocage.", cryptoNote: "Envoyez le montant exact au portefeuille ci-dessous, puis appuyez sur “J'ai envoyé”.", sent: "J'ai envoyé", copy: "Copier l'adresse", copied: "Copié ✓" }, errors: { load: "Impossible de charger la boutique. Veuillez rafraîchir." }, affiliate: { earn: "Gagner une commission", join: "Devenir commissaire" } },
-  es: { hero: { title: "Pinc Network", sub: "Sistemas, aplicaciones, productos y proyectos premium. Compra una vez, descarga para siempre.", cta: "Ver catálogo", chat: "Hablar con el equipo" }, sections: { featured: "Destacados", all: "Todos los artículos" }, product: { what: "Qué es", how: "Cómo funciona", docs: "Documentación", buy: "Comprar ahora" }, checkout: { total: "Total" }, pay: { note: "Pago único seguro. Nuestro equipo confirma cada pedido antes de desbloquear descargas.", cryptoNote: "Envía el monto exacto a la billetera de abajo, luego toca “Ya lo envié”.", sent: "Ya lo envié", copy: "Copiar dirección", copied: "Copiado ✓" }, errors: { load: "No se pudo cargar la tienda. Por favor actualiza." }, affiliate: { earn: "Ganar comisión", join: "Unirse como comisionado" } },
-  ar: { hero: { title: "شبكة بينك", sub: "أنظمة وتطبيقات ومنتجات ومشاريع مميزة. اشترِ مرة واحدة، حمّل للأبد.", cta: "استعرض الكتالوج", chat: "تحدث مع الفريق" }, sections: { featured: "مميز", all: "جميع العناصر" }, product: { what: "ما هو", how: "كيف يعمل", docs: "التوثيق", buy: "اشتري الآن" }, checkout: { total: "المجموع" }, pay: { note: "دفع فريد مؤكد. فريقنا يؤكد كل طلب قبل فتح التحميل.", cryptoNote: "أرسل المبلغ الدقيق إلى المحفظة أدناه، ثم اضغط “لقد أرسلت”.", sent: "لقد أرسلت", copy: "نسخ العنوان", copied: "تم النسخ ✓" }, errors: { load: "تعذر تحميل المتجر. يرجى التحديث بعد لحظة." }, affiliate: { earn: "اكسب عمولة", join: "انضم كمفوض" } },
-  zh: { hero: { title: "Pinc 网络", sub: "高级系统、应用、产品和项目。购买一次，永久下载。", cta: "浏览目录", chat: "与团队交谈" }, sections: { featured: "精选", all: "所有项目" }, product: { what: "是什么", how: "如何工作", docs: "文档", buy: "立即购买" }, checkout: { total: "总计" }, pay: { note: "安全一次性付款。我们的团队在下载解锁前确认每个订单。", cryptoNote: "将准确金额发送到下方钱包，然后点击“我已发送”通知我们的团队。", sent: "我已发送", copy: "复制地址", copied: "已复制 ✓" }, errors: { load: "无法加载商店。请稍后刷新。" }, affiliate: { earn: "赚取佣金", join: "成为专员" } }
+  en: { hero: { title: "Pinc Network", sub: "Premium systems, apps, products & projects. Buy once, download forever.", cta: "Explore the catalog", chat: "Talk to the team" }, sections: { featured: "Featured", all: "All items" }, product: { what: "What it is", how: "How it works", docs: "Documentation", buy: "Buy now" }, checkout: { total: "Total" }, pay: { note: "Secure one-time payment. Our team confirms each order before downloads unlock.", cryptoNote: "Send the exact amount to the wallet below, then tap “I've sent it” to notify our team.", sent: "I've sent it", copy: "Copy address", copied: "Copied ✓" }, errors: { load: "Couldn't load the store. Please refresh in a moment." }, affiliate: { earn: "Earn commission", join: "Become Commissioner", register: "Register as Commissioner", token: "Your API Token (from staff console)", rate: "Your commission rate (%)", link: "Your referral link" }, commissioner: { title: "Become a Commissioner", sub: "Earn 10–30% commission when someone buys through your link. No account needed — just your staff API token." } },
+  sw: { hero: { title: "Pinc Network", sub: "Mifumo ya kiufundi, bidhaa, programu na miradi. Teua mara moja, msoge milele.", cta: "Angalia kituo", chat: "Zungumza na timu" }, sections: { featured: "Vipengele", all: "Kituo chote" }, product: { what: "Nini yule", how: "Inavyofanya kazi", docs: "Hatua za matengenezo", buy: "Nunu sasa" }, checkout: { total: "Jumla" }, pay: { note: "Lipili moja moja. Timu yetu inatarajia kila amri kabla ya kupakua.", cryptoNote: "Tuma kiasi kamili kwenye waleti hapa chini, tisha “Nimesomboleza”.", sent: "Nimesomboleza", copy: "Nakili anwani", copied: "Inakopiwa ✓" }, errors: { load: "Hauwezi kuingia kwenye kituo. Bonyeza tena baada ya dakika moja." }, affiliate: { earn: "Pata kiwango", join: "Jioni kama mwakilishi", register: "Jioni kama mwakilishi", token: "Token yako ya API (mfumo wa kituo)", rate: "Asilianza yako ya kiwango (%)", link: "Mfano wako wa kuweka" }, commissioner: { title: "Jioni kama Mwakilishi", sub: "Pata kiwango 10–30% wakati mtu anununua kwenye mfano wako. Hakikaunti — token pekee ya API ya kituo." } },
+  fr: { hero: { title: "Pinc Network", sub: "Systèmes, applications, produits et projets premium. Achetez une fois, téléchargez pour toujours.", cta: "Voir le catalogue", chat: "Parler à l'équipe" }, sections: { featured: "En vedette", all: "Tous les articles" }, product: { what: "C'est quoi", how: "Comment ça marche", docs: "Documentation", buy: "Acheter maintenant" }, checkout: { total: "Total" }, pay: { note: "Paiement unique sécurisé. Notre équipe confirme chaque commande avant déblocage.", cryptoNote: "Envoyez le montant exact au portefeuille ci-dessous, puis appuyez sur “J'ai envoyé”.", sent: "J'ai envoyé", copy: "Copier l'adresse", copied: "Copié ✓" }, errors: { load: "Impossible de charger la boutique. Veuillez rafraîchir." }, affiliate: { earn: "Gagner une commission", join: "Devenir commissaire", register: "Devenir commissaire", token: "Votre token API (depuis la console staff)", rate: "Votre taux de commission (%)", link: "Votre lien de parrainage" }, commissioner: { title: "Devenir Commissaire", sub: "Gagnez 10–30 % de commission quand quelqu'un achète via votre lien. Aucun compte nécessaire — juste votre token API staff." } },
+  es: { hero: { title: "Pinc Network", sub: "Sistemas, aplicaciones, productos y proyectos premium. Compra una vez, descarga para siempre.", cta: "Ver catálogo", chat: "Hablar con el equipo" }, sections: { featured: "Destacados", all: "Todos los artículos" }, product: { what: "Qué es", how: "Cómo funciona", docs: "Documentación", buy: "Comprar ahora" }, checkout: { total: "Total" }, pay: { note: "Pago único seguro. Nuestro equipo confirma cada pedido antes de desbloquear descargas.", cryptoNote: "Envía el monto exacto a la billetera de abajo, luego toca “Ya lo envié”.", sent: "Ya lo envié", copy: "Copiar dirección", copied: "Copiado ✓" }, errors: { load: "No se pudo cargar la tienda. Por favor actualiza." }, affiliate: { earn: "Ganar comisión", join: "Unirse como comisionado", register: "Registrarse como comisionado", token: "Su token de API (desde la consola de personal)", rate: "Su tasa de comisión (%)", link: "Su enlace de referido" }, commissioner: { title: "Hacerse Comisionado", sub: "Gane 10–30% de comisión cuando alguien compre a través de su enlace. No se necesita cuenta — solo su token API del personal." } },
+  ar: { hero: { title: "شبكة بينك", sub: "أنظمة وتطبيقات ومنتجات ومشاريع مميزة. اشترِ مرة واحدة، حمّل للأبد.", cta: "استعرض الكتالوج", chat: "تحدث مع الفريق" }, sections: { featured: "مميز", all: "جميع العناصر" }, product: { what: "ما هو", how: "كيف يعمل", docs: "التوثيق", buy: "اشتري الآن" }, checkout: { total: "المجموع" }, pay: { note: "دفع فريد مؤكد. فريقنا يؤكد كل طلب قبل فتح التحميل.", cryptoNote: "أرسل المبلغ الدقيق إلى المحفظة أدناه، ثم اضغط “لقد أرسلت”.", sent: "لقد أرسلت", copy: "نسخ العنوان", copied: "تم النسخ ✓" }, errors: { load: "تعذر تحميل المتجر. يرجى التحديث بعد لحظة." }, affiliate: { earn: "اكسب عمولة", join: "انضم كمفوض", register: "سجل كمفوض", token: "رمز API الخاص بك (من وحدة الموظفين)", rate: "معدل العمولة الخاص بك (%)", link: "رابط الإحالة الخاص بك" }, commissioner: { title: "انضم كمفوض", sub: "اكسب عمولة 10–30% عندما يشتري شخص ما عبر رابطك. لا حاجة لحساب — فقط رمز API الخاص بالموظفين." } },
+  zh: { hero: { title: "Pinc 网络", sub: "高级系统、应用、产品和项目。购买一次，永久下载。", cta: "浏览目录", chat: "与团队交谈" }, sections: { featured: "精选", all: "所有项目" }, product: { what: "是什么", how: "如何工作", docs: "文档", buy: "立即购买" }, checkout: { total: "总计" }, pay: { note: "安全一次性付款。我们的团队在下载解锁前确认每个订单。", cryptoNote: "将准确金额发送到下方钱包，然后点击“我已发送”通知我们的团队。", sent: "我已发送", copy: "复制地址", copied: "已复制 ✓" }, errors: { load: "无法加载商店。请稍后刷新。" }, affiliate: { earn: "赚取佣金", join: "成为专员", register: "注册成为专员", token: "您的 API 令牌 (来自员工控制台)", rate: "您的佣金比率 (%)", link: "您的推荐链接" }, commissioner: { title: "成为专员", sub: "当有人通过您的链接购买时，赚取 10–30% 佣金。无需账户 — 只需员工 API 令牌。" } },
 };
 
 function t(path) {
@@ -41,12 +72,15 @@ function esc(s = "") { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;"
 init();
 async function init() {
   try {
-    const ref = new URLSearchParams(location.search).get("ref") || localStorage.getItem("pinc_ref");
+    const qs = new URLSearchParams(location.search);
+    const ref = qs.get("ref") || localStorage.getItem("pinc_ref");
     if (ref) { localStorage.setItem("pinc_ref", ref); state.affiliateCode = ref; }
+
     const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
     state.catalog = data || [];
     const { data: pay } = await supabase.from("payments").select("*").single();
     state.payments = pay || { payPal: { clientId: "", currency: "USD" }, crypto: [], contact: {}, brand: {}, chat_ws: "" };
+
     applyI18n();
     renderPickers();
     renderFilters();
@@ -70,30 +104,62 @@ function applyI18n() {
   document.documentElement.lang = state.lang;
   document.body.style.direction = (state.lang === "ar" ? "rtl" : "ltr");
 }
+
 function renderPickers() {
   $("#langLabel").textContent = `🌐 ${LANGS[state.lang]}`;
-  $("#currLabel").textContent = `${CURRENCY_SYMBOL[state.currency]} ${state.currency}`;
+  $("#currLabel").textContent = `${CURRENCY_SYMBOL[state.currency] || state.currency} ${state.currency}`;
+
   $("#langMenu").innerHTML = Object.entries(LANGS).map(([k, v]) =>
-    `<div class="lang-item${k === state.lang ? " active" : ""}" data-lang="${k}">${v}</div>`).join("");
+    `<div class="lang-item${k === state.lang ? " active" : ""}" data-lang="${k}" role="menuitem">${v}</div>`).join("");
   $("#currMenu").innerHTML = Object.entries(CURRENCIES).map(([k, v]) =>
-    `<div class="curr-item${k === state.currency ? " active" : ""}" data-cur="${k}">${CURRENCY_SYMBOL[k]} ${k}</div>`).join("");
+    `<div class="curr-item${k === state.currency ? " active" : ""}" data-cur="${k}" role="menuitem">${CURRENCY_SYMBOL[k] || k} ${k}</div>`).join("");
+
+  // Language picker click
+  const langPicker = $("#langPicker");
+  const langMenu = $("#langMenu");
+  langPicker.onclick = (e) => { e.stopPropagation(); langMenu.classList.toggle("open"); $("#currMenu").classList.remove("open"); };
   $$("#langMenu .lang-item").forEach(it => it.onclick = () => setLang(it.dataset.lang));
+
+  const currPicker = $("#currPicker");
+  const currMenu = $("#currMenu");
+  currPicker.onclick = (e) => { e.stopPropagation(); currMenu.classList.toggle("open"); $("#langMenu").classList.remove("open"); };
   $$("#currMenu .curr-item").forEach(it => it.onclick = () => setCurr(it.dataset.cur));
-  $("#langPicker").onclick = (e) => { e.stopPropagation(); $("#langMenu").classList.toggle("open"); $$(".curr-menu").forEach(m => m.classList.remove("open")); };
-  $("#currPicker").onclick = (e) => { e.stopPropagation(); $("#currMenu").classList.toggle("open"); $$(".lang-menu").forEach(m => m.classList.remove("open")); };
-  document.addEventListener("click", (e) => { if (!e.target.closest(".picker")) { $$(".lang-menu,.curr-menu").forEach(m => m.classList.remove("open")); } });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".picker")) { langMenu.classList.remove("open"); currMenu.classList.remove("open"); }
+  });
 }
-function setLang(l) { state.lang = l; localStorage.setItem("pinc_lang", l); applyI18n(); renderPickers(); renderGrids(); if (state.product) openProduct(state.product.id); $("#langMenu").classList.remove("open"); toast("Language switched", "ok"); }
-function setCurr(c) { state.currency = c; localStorage.setItem("pinc_currency", c); renderPickers(); renderGrids(); if (state.product) openProduct(state.product.id); $("#currMenu").classList.remove("open"); toast("Currency: " + c, "ok"); }
+
+function setLang(l) {
+  state.lang = l;
+  localStorage.setItem("pinc_lang", l);
+  applyI18n();
+  renderPickers();
+  renderGrids();
+  if (state.product) openProduct(state.product.id);
+  $("#langMenu").classList.remove("open");
+  toast("Language switched", "ok");
+}
+
+function setCurr(c) {
+  state.currency = c;
+  localStorage.setItem("pinc_currency", c);
+  renderPickers();
+  renderGrids();
+  if (state.product) openProduct(state.product.id);
+  $("#currMenu").classList.remove("open");
+  toast("Currency: " + c, "ok");
+}
 
 function convertCents(cents, toCurrency) {
-  const usd = cents / CURRENCIES[state.currency] || cents;
-  return Math.round(usd * CURRENCIES[toCurrency]);
+  const rate = CURRENCIES[toCurrency] || 1;
+  return Math.round(cents * rate);
 }
 function fmtPrice(cents) {
   if (cents == null || Number(cents) <= 0) return "Contact for pricing";
   const converted = convertCents(cents, state.currency);
-  return `<small>${CURRENCY_SYMBOL[state.currency]}</small> ${(converted / 100).toFixed(2)}`;
+  const sym = CURRENCY_SYMBOL[state.currency] || state.currency;
+  return `<small>${state.currency}</small> ${sym} ${(converted / 100).toFixed(2)}`;
 }
 
 function setupRouter() {
@@ -107,6 +173,7 @@ function setupRouter() {
     links.style.display = links.style.display === "flex" ? "none" : "flex";
   };
 }
+
 function routeTo(hash) {
   state.route = hash;
   $$(".view").forEach(v => v.classList.add("hidden"));
@@ -114,7 +181,7 @@ function routeTo(hash) {
   else if (hash.startsWith("#/product/")) { const id = hash.split("/")[2].split("?")[0]; openProduct(id); }
   else if (hash.startsWith("#/buy/")) { const id = hash.split("/")[2]; openBuy(id); }
   else if (hash === "#/chat") { $("#view-chat").classList.remove("hidden"); }
-  else if (hash === "#/affiliate") { renderAffiliateJoin(); $("#view-home").classList.remove("hidden"); }
+  else if (hash === "#/commissioner") { $("#view-commissioner").classList.remove("hidden"); setupCommissioner(); }
   else { routeTo("#/"); }
   window.scrollTo(0, 0);
 }
@@ -317,19 +384,25 @@ function renderWallet(w) {
 
 async function submitOrder(method, meta) {
   if (!state.product) return;
+  const affiliateId = state.affiliateCode ? await resolveAffiliateId(state.affiliateCode) : null;
   const { data, error } = await supabase.rpc("create_order", {
     p_product_id: state.product.id,
     p_buyer_email: "guest@pinc.network",
     p_amount_cents: state.product.price_cents,
     p_currency: state.product.currency || state.currency,
     p_method: method,
-    p_affiliate_id: state.affiliateCode ? null : null,
+    p_affiliate_id: affiliateId,
   });
   if (error) { toast("Order failed — contact us", "err"); return; }
   $("#orderNote").classList.remove("hidden");
   const pane = document.getElementById("pane" + (method === "paypal" ? "Paypal" : "Crypto"));
   if (pane) pane.innerHTML = `<div class="pay-note">✅ Order received. Our team verifies the payment and your download link will appear within 30 minutes.</div>`;
   toast("Order placed — awaiting confirmation", "ok");
+}
+
+async function resolveAffiliateId(code) {
+  const { data } = await supabase.from("profiles").select("id").eq("referral_code", code).single();
+  return data?.id || null;
 }
 
 function initChat() {
@@ -362,6 +435,35 @@ function addMsg(kind, t) {
   if (kind === "sys") div.innerHTML = `<div class="bubble" style="background:var(--panel2);color:var(--dim);font-size:12px;border:none">${esc(t)}</div>`;
   else div.innerHTML = `<div class="bubble ${kind === "me" ? "me" : "them"}">${esc(t)}</div>`;
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+
+/* ── Commissioner registration ── */
+function setupCommissioner() {
+  $("#commBack").onclick = () => routeTo("#/");
+  $("#commRegister").onclick = async () => {
+    const token = $("#fCommToken").value.trim();
+    const rate = Number($("#fCommRate").value || 15);
+    if (!token) return toast("API token required", "err");
+    // Verify token against staff profiles
+    const { data, error } = await supabase.from("profiles").select("id, email, referral_code, commission_rate").eq("id", token).single();
+    if (error || !data) return toast("Invalid staff token", "err");
+    const affId = crypto.randomUUID();
+    const { error: insErr } = await supabase.from("profiles").insert({
+      id: affId, email: data.email, role: "affiliate", referral_code: "aff-" + affId.slice(0,8),
+      commission_rate: rate, created_at: new Date().toISOString(),
+    });
+    if (insErr) return toast(insErr.message, "err");
+    $("#commResult").classList.remove("hidden");
+    const link = `${location.origin}#/buy?ref=${"aff-" + affId.slice(0,8)}`;
+    $("#commLink").value = link;
+    $("#commCopy").onclick = () => { navigator.clipboard.writeText(link); toast("Link copied", "ok"); };
+    toast("Registered as commissioner ✓", "ok");
+  };
+  $("#commCopy").onclick = () => {
+    const link = $("#commLink").value;
+    navigator.clipboard.writeText(link);
+    toast("Link copied", "ok");
+  };
 }
 
 function renderNavCounts() {

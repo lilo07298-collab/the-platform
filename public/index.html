@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Pinc Network — premium marketplace for systems, products, apps & projects. Buy once, download forever." />
+  <meta name="description" content="Pinc Network — premium marketplace for systems, products, apps & projects." />
   <meta name="theme-color" content="#0a0a0f" />
   <title>Pinc Network · Systems, Products, Apps & Projects</title>
   <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
@@ -20,10 +20,16 @@
         <span class="wordmark">Pinc<span class="dot">·</span>Network</span>
       </a>
       <div class="topbar-right">
-        <div class="picker" id="langPicker"><span class="picker-label" id="langLabel">🌐 English</span></div>
-        <div class="lang-menu hidden" id="langMenu"></div>
-        <div class="picker" id="currPicker"><span class="picker-label" id="currLabel">USD $</span></div>
-        <div class="curr-menu hidden" id="currMenu"></div>
+        <div class="picker" id="langPicker" role="button" tabindex="0" aria-label="Language">
+          <span class="picker-label" id="langLabel">🌐 English</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="lang-menu hidden" id="langMenu" role="menu"></div>
+        <div class="picker" id="currPicker" role="button" tabindex="0" aria-label="Currency">
+          <span class="picker-label" id="currLabel">USD $</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="curr-menu hidden" id="currMenu" role="menu"></div>
         <div class="cart-pill hidden" id="cartPill"><span class="cart-count">0</span><span class="cart-label">cart</span></div>
         <button class="btn btn-primary btn-sm" id="userBtn">Account</button>
         <button class="mobile-menu" id="mobileMenu" aria-label="Menu">☰</button>
@@ -122,6 +128,26 @@
       </div>
     </section>
 
+    <section class="view view-commissioner hidden" id="view-commissioner">
+      <div class="wrap">
+        <button class="btn btn-ghost btn-sm back-btn" id="commBack">← Back</button>
+        <div class="formcard">
+          <h2>Become a Commissioner</h2>
+          <p class="dim">Earn 10–30% commission when someone buys through your link. No account needed — just your API token.</p>
+          <label>Your API Token (staff console token)</label><input id="fCommToken" type="text" placeholder="Paste your staff API token" />
+          <label>Your commission rate (%)</label><input id="fCommRate" type="number" min="10" max="30" value="15" />
+          <div class="actions">
+            <button class="btn btn-primary btn-block" id="commRegister">Register as Commissioner</button>
+          </div>
+          <div id="commResult" class="hidden mt">
+            <div class="pay-note">✅ Registered! Your referral link:</div>
+            <input id="commLink" type="text" readonly style="width:100%;padding:10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);" />
+            <button class="btn btn-ghost btn-block mt" id="commCopy">Copy link</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="view view-chat hidden" id="view-chat">
       <div class="wrap">
         <div class="chat-shell">
@@ -144,7 +170,7 @@
   <footer class="shell">
     <div class="wrap footer-inner">
       <div class="brand-foot"><span class="logo-mini">P·N</span> <b>Pinc Network</b></div>
-      <nav class="foot-nav"><a href="#/">Browse</a><a href="#/chat">Support chat</a></nav>
+      <nav class="foot-nav"><a href="#/">Browse</a><a href="#/chat">Support chat</a><a href="#/commissioner">Become Commissioner</a></nav>
       <div class="foot-copy">Pinc Network · Digital goods — all sales final after download.</div>
     </div>
   </footer>

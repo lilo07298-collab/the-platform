@@ -91,12 +91,13 @@
     <section id="loginView">
       <div class="login">
         <h1>Staff sign-in 🔐</h1>
-        <p class="dim">Sign in to manage products, orders, commissions, and payouts. Only staff can access this console.</p>
-        <div class="actions" style="flex-direction:column">
-          <button class="btn btn-primary btn-block" id="loginGoogle">Continue with Google</button>
-          <div class="file-hint mt" style="text-align:center">or</div>
-          <button class="btn btn-ghost btn-block" id="loginEmail">Continue with email</button>
+        <p class="dim">Enter your staff API token to manage products, orders, commissions, and payouts.</p>
+        <label>API Token</label>
+        <input id="tokenInput" type="password" placeholder="Paste your API token…" autocomplete="off" />
+        <div class="actions">
+          <button class="btn btn-primary btn-block" id="loginBtn">Unlock console</button>
         </div>
+        <div class="note">Get your API token from your staff profile. Tokens are per-staff — share only with trusted staff.</div>
       </div>
     </section>
 
@@ -247,28 +248,34 @@
     let catalog = [], payments = null, orders = [], affiliates = [], products = [], editingId = null, notifs = [];
     const esc = (s = "") => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-    /* ── PWA install ── */
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/admin/sw.js").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/admin/sw.js").catch(() => {});
+    const ml = document.createElement("link"); ml.rel = "manifest"; ml.href = "/admin/manifest.json"; document.head.appendChild(ml);
+
+    /* ── API Token auth ── */
+    const stored = sessionStorage.getItem("pn_api_token") || "";
+    if (stored) { supabase.auth.setSession({ access_token: stored, refresh_token: stored, expires_in: 31536000, token_type: "bearer" }); }
+    if (!supabase.auth.getUser) { $("#loginView").classList.remove("hidden"); }
+    else {
+      supabase.auth.getUser().then(({ data: { user }, error }) => {
+        if (!user || error) { $("#loginView").classList.remove("hidden"); }
+        else { $("#consoleView").classList.remove("hidden"); $("#topbar").classList.remove("hidden"); $("#userChip").textContent = user.email || "Staff"; loadAll(); }
+      }).catch(() => { $("#loginView").classList.remove("hidden"); });
     }
-    const manifestLink = document.createElement("link");
-    manifestLink.rel = "manifest";
-    manifestLink.href = "/admin/manifest.json";
-    document.head.appendChild(manifestLink);
 
-    /* ── auth ── */
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { $("#loginView").classList.remove("hidden"); }
-    else { $("#consoleView").classList.remove("hidden"); $("#topbar").classList.remove("hidden"); $("#userChip").textContent = session.user.email; await loadAll(); }
-
-    $("#loginGoogle").onclick = () => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + "/admin/index.html" } });
-    $("#loginEmail").onclick = async () => {
-      const email = prompt("Enter your staff email:");
-      if (!email) return;
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) toast(error.message, "err"); else toast("Check your email for the magic link", "ok");
+    $("#loginBtn").onclick = async () => {
+      const token = $("#tokenInput").value.trim();
+      if (!token) return toast("Enter your API token", "err");
+      sessionStorage.setItem("pn_api_token", token);
+      // Use token as the user id (staff profiles keyed by id = token)
+      const { data, error } = await supabase.from("profiles").select("id, email, role").eq("id", token).single();
+      if (error || !data) return toast("Invalid API token", "err");
+      $("#loginView").classList.add("hidden");
+      $("#consoleView").classList.remove("hidden");
+      $("#topbar").classList.remove("hidden");
+      $("#userChip").textContent = data.email || "Staff";
+      await loadAll();
     };
-    $("#logoutBtn").onclick = () => { supabase.auth.signOut(); location.reload(); };
+    $("#logoutBtn").onclick = () => { sessionStorage.removeItem("pn_api_token"); location.reload(); };
 
     async function loadAll() {
       [products, payments, orders, affiliates] = await Promise.all([
@@ -284,7 +291,6 @@
       renderTabs(); renderProducts(); fillPayments(); renderWallets(); renderOrders(); renderAffiliates(); renderDashboard();
     }
 
-    /* ── tabs ── */
     function renderTabs() {
       document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
         document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
@@ -292,7 +298,6 @@
       });
     }
 
-    /* ── catalog ── */
     function renderProducts() {
       const el = $("#productList");
       $("#pcount").textContent = `(${catalog.length})`;
@@ -344,7 +349,6 @@
     $("#fImageFile").onchange = async () => {
       try { const u = await uploadFile("fImageFile", "products"); if (u) { /* store in fImage via input below */ } } catch (e) { toast(e.message, "err"); }
     };
-    // Image URL input - keep separate text input for URL, file upload returns public URL
     $("#fScreenshotFiles").onchange = async () => {
       try {
         const input = $("#fScreenshotFiles");
@@ -396,7 +400,6 @@
       catalog = data || []; renderProducts();
     }
 
-    /* ── payments ── */
     function fillPayments() {
       $("#pClientId").value = payments?.payPal?.clientId || ""; $("#pCurrency").value = payments?.payPal?.currency || "USD";
       $("#pChatWs").value = payments?.chat_ws || ""; $("#cEmail").value = payments?.contact?.email || "";
@@ -426,7 +429,6 @@
       toast("Settings saved ✓ — store live", "ok");
     };
 
-    /* ── wallet balances ── */
     async function refreshWalletBalances() {
       const wallets = payments?.crypto || [];
       const grid = $("#statGrid");
@@ -450,7 +452,6 @@
       }
     }
 
-    /* ── orders ── */
     function renderOrders() {
       const el = $("#orderList");
       $("#ocount").textContent = `(${orders.length})`;
@@ -501,7 +502,6 @@
       orders = data || []; renderOrders();
     };
 
-    /* ── affiliates ── */
     function renderAffiliates() {
       const el = $("#affiliateList");
       $("#acount").textContent = `(${affiliates.length})`;
@@ -528,7 +528,6 @@
       affiliates = aff || []; renderAffiliates();
     };
 
-    /* ── notifications ── */
     function addNotif(text) {
       notifs.unshift({ id: "n-" + Date.now(), text, at: new Date().toISOString(), read: false });
       if (notifs.length > 50) notifs.pop();
@@ -554,7 +553,6 @@
     $("#notifBell").onclick = () => { notifs.forEach(n => n.read = true); renderNotifs(); updateBell(); };
     $("#clearNotif").onclick = () => { notifs = []; renderNotifs(); updateBell(); toast("Cleared", "ok"); };
 
-    /* ── demo data ── */
     $("#wipeDemo").onclick = async () => {
       if (!confirm("Wipe all demo products and orders?")) return;
       await supabase.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
@@ -577,7 +575,6 @@
       catalog = data || []; renderProducts();
     };
 
-    /* ── dashboard ── */
     function renderDashboard() {
       const totalSales = orders.reduce((s, o) => s + (o.status === "paid" ? o.amount_cents : 0), 0);
       const totalComm = orders.reduce((s, o) => s + (o.status === "paid" ? o.commission_cents : 0), 0);
@@ -588,7 +585,6 @@
       refreshWalletBalances();
     }
 
-    /* ── toast ── */
     function toast(msg, cls = "") {
       document.querySelectorAll(".toastbox").forEach(t => t.remove());
       const d = document.createElement("div");
@@ -598,7 +594,6 @@
     }
 
     $("#refreshOrders").onclick = () => { loadAll(); toast("Refreshed", "ok"); };
-
   </script>
 </body>
 </html>

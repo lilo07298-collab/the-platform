@@ -1,0 +1,10 @@
+
+/* picker arrows and menu polish */
+.picker .arrow { font-size: 10px; color: var(--dim); margin-left: 4px; }
+.lang-menu, .curr-menu { max-height: 260px; overflow-y: auto; }
+.lang-item, .curr-item { white-space: nowrap; }
+.lang-item.active, .curr-item.active { background: var(--grad); color: #0a0a0f; font-weight: 800; }
+@media (max-width: 760px) {
+  .topbar-right { gap: 10px; }
+  .cart-pill { display: none; }
+}
