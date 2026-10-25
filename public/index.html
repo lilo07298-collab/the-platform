@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Pinc Network — premium marketplace for systems, products, apps & projects. Buy once, download forever." />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Pinc Network · Systems, Products, Apps & Projects</title>
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="media/logo.png" />
+</head>
+<body>
+  <noscript><div class="error-banner">JavaScript is required to browse Pinc Network.</div></noscript>
+
+  <header class="shell topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#/">
+        <img class="logo" src="media/logo.png" alt="Pinc Network" onerror="this.style.display='none'"/>
+        <span class="wordmark">Pinc<span class="dot">·</span>Network</span>
+      </a>
+      <div class="topbar-right">
+        <div class="picker" id="langPicker"><span class="picker-label" id="langLabel">🌐 English</span></div>
+        <div class="lang-menu hidden" id="langMenu"></div>
+        <div class="picker" id="currPicker"><span class="picker-label" id="currLabel">USD $</span></div>
+        <div class="curr-menu hidden" id="currMenu"></div>
+        <div class="cart-pill hidden" id="cartPill"><span class="cart-count">0</span><span class="cart-label">cart</span></div>
+        <button class="btn btn-primary btn-sm" id="userBtn">Account</button>
+        <button class="mobile-menu" id="mobileMenu" aria-label="Menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell" id="app">
+    <section class="view view-home" id="view-home">
+      <div class="wrap">
+        <div class="hero">
+          <div class="hero-badge">Instant delivery · Digital only</div>
+          <h1 data-i18n="hero.title">Pinc Network</h1>
+          <p class="hero-sub" data-i18n="hero.sub">Premium systems, apps, products & projects. Buy once, download forever.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#/products" data-i18n="hero.cta">Explore the catalog</a>
+            <a class="btn btn-outline" href="#/chat" data-i18n="hero.chat">Talk to the team</a>
+          </div>
+        </div>
+
+        <div class="section-head"><h2 data-i18n="sections.featured">Featured</h2><a class="btn btn-outline btn-sm" href="#/products">See all</a></div>
+        <div class="grid" id="gridFeatured"></div>
+
+        <div class="section-head"><h2 data-i18n="sections.all">All items</h2></div>
+        <div class="filters" id="filters"></div>
+        <div class="grid" id="gridAll"></div>
+      </div>
+    </section>
+
+    <section class="view view-product hidden" id="view-product">
+      <div class="wrap product-wrap">
+        <button class="btn btn-ghost btn-sm back-btn" id="prodBack">← Back</button>
+        <div class="product-gallery">
+          <div class="main-img" id="prodMain"></div>
+          <div class="thumbs" id="prodThumbs"></div>
+        </div>
+        <div class="product-info">
+          <div class="product-meta">
+            <span class="prod-badge" id="prodCat"></span>
+            <span class="prod-price" id="prodPrice"></span>
+          </div>
+          <h1 id="prodName"></h1>
+          <p class="prod-tagline" id="prodTagline"></p>
+          <div class="prod-divider"></div>
+          <h3 data-i18n="product.what">What it is</h3><p id="prodDesc"></p>
+          <h3 data-i18n="product.how">How it works</h3><p id="prodHow"></p>
+          <h3 id="prodDocsTitle" data-i18n="product.docs">Documentation</h3><div id="prodDocs"></div>
+          <div class="prod-divider"></div>
+          <div class="buy-strip">
+            <span class="buy-total" id="buyTotal"></span>
+            <button class="btn btn-primary btn-lg" id="buyBtn" data-i18n="product.buy">Buy now</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view view-checkout hidden" id="view-checkout">
+      <div class="wrap">
+        <button class="btn btn-ghost btn-sm back-btn" id="checkoutBack">← Back</button>
+        <div class="checkout-card">
+          <div class="checkout-head">
+            <div class="checkout-thumb" id="coThumb"></div>
+            <div>
+              <h2 id="coName"></h2>
+              <p class="dim" id="coDesc"></p>
+            </div>
+          </div>
+          <div class="checkout-price">
+            <span class="label" data-i18n="checkout.total">Total</span>
+            <span class="amount" id="coAmount"></span>
+          </div>
+          <div class="method-tabs">
+            <button class="method-tab active" data-m="paypal">PayPal / Card</button>
+            <button class="method-tab" data-m="crypto">Crypto wallet</button>
+          </div>
+          <div id="panePaypal">
+            <div class="pay-note">Secure one-time payment. Our team confirms each order before downloads unlock.</div>
+            <div id="ppButtons"></div>
+          </div>
+          <div id="paneCrypto" class="hidden">
+            <div class="pay-note">Send the exact amount to the wallet below, then tap "I've sent it".</div>
+            <div class="crypto-pick" id="cryptoPick"></div>
+            <div class="wallet-box">
+              <div class="wallet-row"><span class="wallet-label" id="coWalletLabel"></span><button class="copy-btn" id="coCopy">Copy address</button></div>
+              <div class="wallet-addr mono" id="coWalletAddr"></div>
+              <div class="qr-wrap"><img id="coQr" alt="QR" /></div>
+              <p class="amount-note mt">Amount: <strong id="coAmtCrypto"></strong></p>
+            </div>
+            <button class="btn btn-primary btn-block" id="iPayCrypto">I've sent it</button>
+          </div>
+          <div class="support-links mt" id="coSupport"></div>
+        </div>
+        <div class="order-note hidden" id="orderNote">
+          ✅ Order received. Our team verifies payments — download unlocks within 30 minutes of confirmation.
+        </div>
+      </div>
+    </section>
+
+    <section class="view view-chat hidden" id="view-chat">
+      <div class="wrap">
+        <div class="chat-shell">
+          <div class="chat-header">
+            <div class="chat-brand"><span class="dot-badge"></span> Pinc Support</div>
+            <div class="chat-status"><span class="status-dot"></span> Team online</div>
+          </div>
+          <div class="chat-messages" id="chatMsgs">
+            <div class="msg msg-them"><div class="bubble them">Hi 👋 — welcome to Pinc Network. Ask us about any product, payments, or downloads.</div></div>
+          </div>
+          <div class="chat-input-wrap">
+            <input type="text" id="chatIn" placeholder="Type a message…" />
+            <button class="btn btn-primary btn-sm" id="chatSend">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <div class="wrap footer-inner">
+      <div class="brand-foot"><span class="logo-mini">P·N</span> <b>Pinc Network</b></div>
+      <nav class="foot-nav"><a href="#/">Browse</a><a href="#/chat">Support chat</a></nav>
+      <div class="foot-copy">Pinc Network · Digital goods — all sales final after download.</div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>

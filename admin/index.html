@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pinc Network · Staff Console</title>
+  <meta name="robots" content="noindex" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <link rel="icon" href="media/logo.png" />
+  <style>
+    :root {
+      --bg: #0a0a0f; --panel: #12121a; --panel2: #1a1a24; --line: #2a2a3a;
+      --text: #f5f5f0; --dim: #a8a8a0; --gold: #d4af37; --gold2: #b8952b;
+      --grad: linear-gradient(135deg, #d4af37, #b8952b); --radius: 14px;
+      --ok: #22c55e; --warn: #fbbf24; --deny: #f43f5e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Inter", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .hidden { display: none !important; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 26px 22px 100px; }
+    header.bar { display: flex; align-items: center; gap: 14px; padding: 16px 22px; border-bottom: 1px solid var(--line); background: rgba(10,10,15,.85); position: sticky; top: 0; z-index: 40; backdrop-filter: blur(12px); }
+    .bm { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); display: grid; place-items: center; font-size: 13px; color: #0a0a0f; font-weight: 900; }
+    header.bar b { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+    .spacer { flex: 1; }
+    .userchip { font-size: 12.5px; color: var(--dim); border: 1px solid var(--line); padding: 5px 11px; border-radius: 999px; }
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border-radius: 11px; font-size: 13.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent; text-decoration: none; color: var(--text); transition: filter .2s, background .2s; }
+    .btn:active { transform: scale(.975); }
+    .btn-primary { background: var(--grad); color: #0a0a0f; box-shadow: 0 8px 26px rgba(212,175,55,.42); }
+    .btn-primary:hover { filter: brightness(1.06); }
+    .btn-ghost { background: var(--panel2); border-color: var(--line); }
+    .btn-ghost:hover { background: rgba(255,255,255,.06); }
+    .btn-deny { background: rgba(244,63,94,.12); border-color: rgba(244,63,94,.4); color: #fda4af; }
+    .btn-deny:hover { background: rgba(244,63,94,.22); }
+    .btn-ok { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: #86efac; }
+    .btn-ok:hover { background: rgba(34,197,94,.25); }
+    .btn-sm { padding: 7px 12px; font-size: 12.5px; border-radius: 9px; }
+    .btn-block { width: 100%; }
+    input, textarea, select { width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 11px; padding: 11px 13px; font-size: 14px; font-family: inherit; outline: none; transition: border .2s; }
+    input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+    label { display: block; font-size: 12px; color: var(--dim); margin: 14px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .login { max-width: 430px; margin: 14vh auto 0; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 34px; box-shadow: 0 24px 60px -20px rgba(0,0,0,.7); }
+    .login h1 { font-size: 20px; margin-bottom: 6px; }
+    .login p.dim { font-size: 13.5px; margin-bottom: 24px; line-height: 1.6; }
+    .tabs { display: flex; gap: 8px; margin: 26px 0 18px; }
+    .tab { padding: 9px 18px; border-radius: 11px; border: 1px solid var(--line); background: var(--panel2); color: var(--dim); cursor: pointer; font-size: 13.5px; font-weight: 700; }
+    .tab.active { background: var(--grad); color: #0a0a0f; border-color: transparent; box-shadow: 0 6px 20px rgba(212,175,55,.35); }
+    .rowcard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; }
+    .thumb { width: 52px; height: 52px; border-radius: 10px; background: linear-gradient(135deg,#14141a,#1c1c28); display: grid; place-items: center; font-size: 22px; overflow: hidden; flex-shrink: 0; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .info { flex: 1; min-width: 0; }
+    .info b { font-size: 14.5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .info span { font-size: 12.5px; color: var(--dim); }
+    .badge { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(212,175,55,.35); color: #e7c95e; }
+    .badge.pending { border-color: rgba(251,191,36,.5); color: #fcd34d; }
+    .badge.paid { border-color: rgba(34,197,94,.5); color: #86efac; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .formcard { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 24px; margin-bottom: 18px; }
+    .formcard h3 { font-size: 15px; margin-bottom: 10px; }
+    .hint { font-size: 12.5px; color: var(--dim); margin-bottom: 10px; }
+    .actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .wallet-card { background: var(--panel2); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .wallet-card .left { display: flex; align-items: center; gap: 12px; }
+    .wallet-card .icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(212,175,55,.15); color: #e7c95e; display: grid; place-items: center; font-size: 18px; }
+    .wallet-card .meta b { display: block; font-size: 14px; }
+    .wallet-card .meta span { font-size: 12.5px; color: var(--dim); }
+    .wallet-card .balance { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--gold); }
+    .notif-bell { position: relative; cursor: pointer; font-size: 18px; padding: 8px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); }
+    .notif-badge { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--deny); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); }
+    .toastbox { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 100; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 20px; font-size: 13.5px; box-shadow: 0 10px 40px rgba(0,0,0,.5); animation: up .25s ease; }
+    .toastbox.ok { border-color: rgba(34,197,94,.5); }
+    .toastbox.err { border-color: rgba(244,63,94,.5); }
+    @keyframes up { from { opacity: 0; transform: translate(-50%, 10px); } }
+    .file-hint { font-size: 12px; color: var(--dim); margin-top: 6px; }
+    .danger-zone { background: rgba(244,63,94,.08); border: 1px dashed rgba(244,63,94,.35); border-radius: 14px; padding: 16px; margin-top: 24px; }
+    @media (max-width: 700px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="bar hidden" id="topbar">
+    <div class="bm">P·N</div><b>Pinc Network · Staff Console</b>
+    <div class="spacer"></div>
+    <a class="btn btn-ghost btn-sm" href="https://the-platform-marketplace.onrender.com" target="_blank" rel="noopener">View store ↗</a>
+    <div class="notif-bell" id="notifBell" title="Notifications">𔔨</div>
+    <span class="userchip" id="userChip"></span>
+    <button class="btn btn-deny btn-sm" id="logoutBtn">Log out</button>
+  </header>
+
+  <main class="wrap">
+    <section id="loginView">
+      <div class="login">
+        <h1>Staff sign-in 🔐</h1>
+        <p class="dim">Sign in to manage products, orders, commissions, and payouts. Only staff can access this console.</p>
+        <div class="actions" style="flex-direction:column">
+          <button class="btn btn-primary btn-block" id="loginGoogle">Continue with Google</button>
+          <div class="file-hint mt" style="text-align:center">or</div>
+          <button class="btn btn-ghost btn-block" id="loginEmail">Continue with email</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="consoleView" class="hidden">
+      <div class="tabs">
+        <button class="tab active" data-t="dashboard">📊 Dashboard</button>
+        <button class="tab" data-t="catalog">🛒 Catalog</button>
+        <button class="tab" data-t="payments">💳 Payments</button>
+        <button class="tab" data-t="orders">🧾 Orders</button>
+        <button class="tab" data-t="affiliates">🤝 Affiliates</button>
+      </div>
+
+      <div id="tab-dashboard">
+        <div class="grid3" id="statGrid"></div>
+        <div class="wallet-card">
+          <div class="left">
+            <div class="icon">💵</div>
+            <div class="meta"><b>Your earnings balance</b><span>Available to withdraw</span></div>
+          </div>
+          <div class="balance" id="adminBalance">—</div>
+        </div>
+        <div class="note"><b>Real-time balances</b> read from your crypto wallets. PayPal balance requires your PayPal API credentials in Settings.</div>
+        <div class="formcard">
+          <h3>🔔 Notifications</h3>
+          <p class="dim">New orders and payout requests appear here. Refresh to check.</p>
+          <div class="actions">
+            <button class="btn btn-primary" id="refreshOrders">Refresh</button>
+            <button class="btn btn-ghost" id="clearNotif">Clear all</button>
+          </div>
+          <div id="notifList"></div>
+        </div>
+      </div>
+
+      <div id="tab-catalog">
+        <div class="formcard">
+          <h3 id="pfTitle">➕ New product</h3>
+          <div class="grid2">
+            <div><label>Name</label><input id="fName" placeholder="Nexus Suite" /></div>
+            <div><label>Category</label><select id="fCategory"><option value="product">Product</option><option value="system">System</option><option value="app">App</option><option value="project">Project</option></select></div>
+          </div>
+          <div class="grid2">
+            <div><label>Price (USD)</label><input id="fPrice" type="number" min="0" step="0.01" placeholder="49.00" /></div>
+            <div><label>Commission rate %</label><input id="fCommission" type="number" min="0" max="100" step="1" placeholder="10" /></div>
+          </div>
+          <label>Tagline</label><input id="fTagline" placeholder="All-in-one productivity workspace" />
+          <label>What it is (description)</label><textarea id="fDescription" placeholder="What the buyer receives…"></textarea>
+          <label>How it works</label><textarea id="fHow" placeholder="Install, run, configure…"></textarea>
+          <div class="grid2">
+            <div><label>Main image (upload)</label><input id="fImageFile" type="file" accept="image/*" /><div class="file-hint">Uploads to cloud storage</div></div>
+            <div><label>Featured on home?</label><select id="fFeatured"><option value="0">No</option><option value="1">Yes</option></select></div>
+          </div>
+          <label>Screenshots (upload, one or more)</label><input id="fScreenshotFiles" type="file" accept="image/*" multiple style="margin-top:8px" />
+          <div class="file-hint mt">Each screenshot uploads to cloud storage.</div>
+          <label>Documentation links — Title | URL (one per line)</label><textarea id="fDocs" placeholder="Setup guide | https://…/guide.pdf"></textarea>
+          <label>Download file (upload zip/app up to 20 GB+) OR external URL</label>
+          <input id="fFile" type="file" /><div class="file-hint">Large files (apps, frameworks, IPDs) upload to storage. Or paste a direct URL below.</div>
+          <input id="fDownloadUrl" type="text" placeholder="Or external download URL" style="margin-top:8px" />
+          <label>Features (comma-separated)</label><input id="fFeatures" placeholder="Offline sync, Plugin API, Lifetime updates" />
+          <div class="actions">
+            <button class="btn btn-primary" id="saveProduct">Save product → live on store</button>
+            <button class="btn btn-ghost hidden" id="cancelEdit">Cancel edit</button>
+          </div>
+        </div>
+        <h3 style="font-size:15px;margin:24px 0 10px;color:var(--dim)">Catalog items <span id="pcount"></span></h3>
+        <div id="productList"></div>
+      </div>
+
+      <div id="tab-payments" class="hidden">
+        <div class="note">PayPal client ID is public (storefront SDK). Wallet addresses show at checkout. Downloads stay locked until you confirm each order.</div>
+        <div class="formcard">
+          <h3>💳 PayPal</h3>
+          <div class="grid2">
+            <div><label>Client ID</label><input id="pClientId" placeholder="AeXXXX…" /></div>
+            <div><label>Currency</label><input id="pCurrency" placeholder="USD" /></div>
+          </div>
+        </div>
+        <div class="formcard wallets">
+          <h3>🪙 Crypto wallets</h3>
+          <div id="walletList"></div>
+          <div class="actions"><button class="btn btn-ghost" id="addWallet">+ Add wallet</button></div>
+        </div>
+        <div class="formcard">
+          <h3>🔗 Integrations</h3>
+          <div class="grid2">
+            <div><label>Chat WebSocket URL</label><input id="pChatWs" placeholder="wss://…/chat" /></div>
+            <div><label>Contact email</label><input id="cEmail" placeholder="support@pinc-network.example" /></div>
+          </div>
+        </div>
+        <div class="formcard">
+          <h3>🏷️ Brand</h3>
+          <div class="grid2">
+            <div><label>Store name</label><input id="bName" placeholder="Pinc Network" /></div>
+            <div><label>Store tagline</label><input id="bTagline" placeholder="Premium systems, apps, products & projects" /></div>
+          </div>
+        </div>
+        <div class="actions"><button class="btn btn-primary" id="savePayments">Save settings → live on store</button></div>
+      </div>
+
+      <div id="tab-orders">
+        <h3 style="font-size:15px;margin-bottom:12px;color:var(--dim)">Orders <span id="ocount"></span></h3>
+        <div id="orderList"></div>
+        <div class="formcard" style="margin-top:14px">
+          <h3>Add order manually</h3>
+          <div class="grid2">
+            <div><label>Buyer email</label><input id="oBuyer" placeholder="alice@example.com" /></div>
+            <div><label>Product</label><input id="oProduct" placeholder="Nexus Suite" /></div>
+          </div>
+          <div class="grid2">
+            <div><label>Amount (USD)</label><input id="oAmount" type="number" step="0.01" placeholder="49.00" /></div>
+            <div><label>Method</label><select id="oMethod"><option value="crypto">Crypto</option><option value="paypal">PayPal</option><option value="other">Other</option></select></div>
+          </div>
+          <div class="actions"><button class="btn btn-primary" id="addOrder">Record order</button></div>
+        </div>
+      </div>
+
+      <div id="tab-affiliates" class="hidden">
+        <h3 style="font-size:15px;margin-bottom:12px;color:var(--dim)">Affiliates / Commissioners <span id="acount"></span></h3>
+        <div id="affiliateList"></div>
+        <div class="formcard" style="margin-top:14px">
+          <h3>Set commission rate for an affiliate</h3>
+          <div class="grid2">
+            <div><label>Affiliate email</label><input id="aEmail" placeholder="commissioner@example.com" /></div>
+            <div><label>Rate % (10-30)</label><input id="aRate" type="number" min="10" max="30" step="1" placeholder="15" /></div>
+          </div>
+          <div class="actions"><button class="btn btn-primary" id="setRate">Set rate</button></div>
+        </div>
+        <div class="note">Affiliates sign up with Google, get a referral link, and earn commission when someone buys using their link. You confirm payment → commission credits instantly → they can withdraw within 6 hours.</div>
+      </div>
+
+      <div class="danger-zone">
+        <h3 style="font-size:14px;margin-bottom:8px;color:#fda4af">⚠️ Reset store data</h3>
+        <p class="dim" style="margin-bottom:12px">Wipes demo/sample products and orders. Cannot be undone.</p>
+        <div class="actions" style="margin-bottom:0">
+          <button class="btn btn-deny" id="wipeDemo">Delete demo data</button>
+          <button class="btn btn-ghost" id="restoreDemo">Restore demo data</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://gstkasaosgwnqypirwhm.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzdGthc2Fvc2d3bnF5cGlyd2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNTI4OTQsImV4cCI6MjEwNzcyODg5NH0.Bzl-s_rb0UerU3U7zIRoPFNpubif9tkEAu6O_6tSOR8";
+    const supabase = supabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (s) => document.querySelector(s);
+    const CAT = { system: "sys", product: "product", app: "app", project: "project" };
+    let catalog = [], payments = null, orders = [], affiliates = [], products = [], editingId = null, notifs = [];
+    const esc = (s = "") => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    /* ── PWA install ── */
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/admin/sw.js").catch(() => {});
+    }
+    const manifestLink = document.createElement("link");
+    manifestLink.rel = "manifest";
+    manifestLink.href = "/admin/manifest.json";
+    document.head.appendChild(manifestLink);
+
+    /* ── auth ── */
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { $("#loginView").classList.remove("hidden"); }
+    else { $("#consoleView").classList.remove("hidden"); $("#topbar").classList.remove("hidden"); $("#userChip").textContent = session.user.email; await loadAll(); }
+
+    $("#loginGoogle").onclick = () => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + "/admin/index.html" } });
+    $("#loginEmail").onclick = async () => {
+      const email = prompt("Enter your staff email:");
+      if (!email) return;
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) toast(error.message, "err"); else toast("Check your email for the magic link", "ok");
+    };
+    $("#logoutBtn").onclick = () => { supabase.auth.signOut(); location.reload(); };
+
+    async function loadAll() {
+      [products, payments, orders, affiliates] = await Promise.all([
+        supabase.from("products").select("*").order("created_at", { ascending: false }),
+        supabase.from("payments").select("*").single(),
+        supabase.from("orders").select("*").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*").eq("role", "affiliate"),
+      ]);
+      catalog = products.data || [];
+      payments = payments.data || {};
+      orders = orders.data || [];
+      affiliates = affiliates.data || [];
+      renderTabs(); renderProducts(); fillPayments(); renderWallets(); renderOrders(); renderAffiliates(); renderDashboard();
+    }
+
+    /* ── tabs ── */
+    function renderTabs() {
+      document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+        document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+        ["dashboard","catalog","payments","orders","affiliates"].forEach(k => $("#tab-"+k).classList.toggle("hidden", k!==t.dataset.t));
+      });
+    }
+
+    /* ── catalog ── */
+    function renderProducts() {
+      const el = $("#productList");
+      $("#pcount").textContent = `(${catalog.length})`;
+      el.innerHTML = catalog.map(p => `
+        <div class="rowcard">
+          <div class="thumb">${p.image_url ? `<img src="${esc(p.image_url)}">` : "📦"}</div>
+          <div class="info">
+            <b>${esc(p.name)} ${p.featured ? '<span class="badge">★</span>' : ""}</b>
+            <span>${CAT[p.category]||p.category} · $${(p.price_cents/100).toFixed(2)} · comm ${p.commission_rate}%</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-edit="${esc(p.id)}">Edit</button>
+          <button class="btn btn-deny btn-sm" data-del="${esc(p.id)}">Delete</button>
+        </div>`).join("");
+      el.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => startEdit(b.dataset.edit));
+      el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => delProduct(b.dataset.del));
+    }
+    function startEdit(id) {
+      const p = catalog.find(x => x.id === id);
+      editingId = id;
+      $("#pfTitle").textContent = "✏️ Editing: " + p.name;
+      $("#fName").value = p.name; $("#fCategory").value = p.category; $("#fPrice").value = p.price_cents / 100;
+      $("#fCommission").value = p.commission_rate; $("#fTagline").value = p.tagline || "";
+      $("#fDescription").value = p.description || ""; $("#fHow").value = p.how || "";
+      $("#fFeatured").value = p.featured ? "1" : "0";
+      $("#fDocs").value = (p.docs || []).map(d => `${d.title} | ${d.url}`).join("\n");
+      $("#fDownloadUrl").value = p.download_url || "";
+      $("#fFeatures").value = (p.features || []).join(", ");
+      $("#cancelEdit").classList.remove("hidden");
+      window.scrollTo(0, 0);
+    }
+    $("#cancelEdit").onclick = () => { editingId = null; clearForm(); };
+    function clearForm() {
+      ["fName","fPrice","fCommission","fTagline","fDescription","fHow","fDocs","fDownloadUrl","fFeatures"].forEach(i => $("#"+i).value = "");
+      $("#fCategory").value = "product"; $("#fCommission").value = "10"; $("#fFeatured").value = "0";
+      $("#pfTitle").textContent = "➕ New product"; $("#cancelEdit").classList.add("hidden");
+    }
+
+    async function uploadFile(inputId, bucket) {
+      const input = $("#" + inputId);
+      if (!input.files || !input.files.length) return null;
+      const f = input.files[0];
+      const { data, error } = await supabase.storage.from(bucket).upload(`${Date.now()}-${f.name}`, f, { upsert: false });
+      if (error) throw new Error(error.message);
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(data.path);
+      input.value = "";
+      return pub.publicUrl;
+    }
+
+    $("#fImageFile").onchange = async () => {
+      try { const u = await uploadFile("fImageFile", "products"); if (u) { /* store in fImage via input below */ } } catch (e) { toast(e.message, "err"); }
+    };
+    // Image URL input - keep separate text input for URL, file upload returns public URL
+    $("#fScreenshotFiles").onchange = async () => {
+      try {
+        const input = $("#fScreenshotFiles");
+        for (const f of input.files) {
+          const { data } = await supabase.storage.from("products").upload(`${Date.now()}-${f.name}`, f, { upsert: false });
+          const { data: pub } = supabase.storage.from("products").getPublicUrl(data.path);
+          $("#fDocs").value = ($("#fDocs").value ? $("#fDocs").value + "\n" : "") + `Screenshot | ${pub.publicUrl}`;
+        }
+        input.value = "";
+      } catch (e) { toast(e.message, "err"); }
+    };
+    $("#fFile").onchange = async () => {
+      try { const u = await uploadFile("fFile", "products"); if (u) $("#fDownloadUrl").value = u; } catch (e) { toast(e.message, "err"); }
+    };
+
+    $("#saveProduct").onclick = async () => {
+      const name = $("#fName").value.trim();
+      if (!name) return toast("Name required", "err");
+      const product = {
+        id: editingId || crypto.randomUUID(),
+        name, category: $("#fCategory").value, tagline: $("#fTagline").value.trim(),
+        description: $("#fDescription").value.trim(), how: $("#fHow").value.trim(),
+        price_cents: Math.round(Number($("#fPrice").value || 0) * 100),
+        commission_rate: Number($("#fCommission").value || 10),
+        currency: "USD", image_url: $("#fImage").value.trim(),
+        featured: $("#fFeatured").value === "1",
+        docs: $("#fDocs").value.split("\n").map(l => { const [t, u] = l.split("|").map(s => s.trim()); return u ? { title: t || "Doc", url: u } : null; }).filter(Boolean),
+        download_url: $("#fDownloadUrl").value.trim(),
+        features: $("#fFeatures").value.split(",").map(s => s.trim()).filter(Boolean),
+        updated_at: new Date().toISOString(),
+      };
+      if (editingId) {
+        const { error } = await supabase.from("products").upsert(product).eq("id", editingId);
+        if (error) return toast(error.message, "err");
+      } else {
+        const { error } = await supabase.from("products").insert(product);
+        if (error) return toast(error.message, "err");
+      }
+      toast("Saved ✓ — store live", "ok");
+      editingId = null; clearForm();
+      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      catalog = data || []; renderProducts();
+    };
+    async function delProduct(id) {
+      if (!confirm("Delete this product?")) return;
+      await supabase.from("products").delete().eq("id", id);
+      toast("Deleted ✓", "ok");
+      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      catalog = data || []; renderProducts();
+    }
+
+    /* ── payments ── */
+    function fillPayments() {
+      $("#pClientId").value = payments?.payPal?.clientId || ""; $("#pCurrency").value = payments?.payPal?.currency || "USD";
+      $("#pChatWs").value = payments?.chat_ws || ""; $("#cEmail").value = payments?.contact?.email || "";
+      $("#bName").value = payments?.brand?.name || "Pinc Network"; $("#bTagline").value = payments?.brand?.tagline || "";
+    }
+    function renderWallets() {
+      const arr = payments?.crypto || [];
+      $("#walletList").innerHTML = arr.map((w, i) => `
+        <div class="rowcard">
+          <input class="wfield" data-w="icon" data-i="${i}" value="${esc(w.icon)}" placeholder="₿" style="max-width:52px">
+          <input class="wfield" data-w="label" data-i="${i}" value="${esc(w.label)}" placeholder="Name">
+          <input class="wfield" data-w="symbol" data-i="${i}" value="${esc(w.symbol)}" placeholder="SYM" style="max-width:100px">
+          <input class="wfield" data-w="address" data-i="${i}" value="${esc(w.address)}" placeholder="wallet address">
+          <button class="btn btn-deny btn-sm" data-rm="${i}">✕</button>
+        </div>`).join("") || '<div class="hint">No wallets yet.</div>';
+      $("#walletList").querySelectorAll(".wfield").forEach(inp => inp.oninput = () => payments.crypto[+inp.dataset.i][inp.dataset.w] = inp.value);
+      $("#walletList").querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { payments.crypto.splice(+b.dataset.rm, 1); renderWallets(); });
+    }
+    $("#addWallet").onclick = () => { payments.crypto.push({ label: "", symbol: "", address: "", icon: "🪙" }); renderWallets(); };
+    $("#savePayments").onclick = async () => {
+      payments.payPal = { clientId: $("#pClientId").value.trim(), currency: ($("#pCurrency").value.trim() || "USD") };
+      payments.chat_ws = $("#pChatWs").value.trim();
+      payments.contact = { email: $("#cEmail").value.trim() };
+      payments.brand = { name: $("#bName").value.trim() || "Pinc Network", tagline: $("#bTagline").value.trim() };
+      const { error } = await supabase.from("payments").upsert(payments);
+      if (error) return toast(error.message, "err");
+      toast("Settings saved ✓ — store live", "ok");
+    };
+
+    /* ── wallet balances ── */
+    async function refreshWalletBalances() {
+      const wallets = payments?.crypto || [];
+      const grid = $("#statGrid");
+      grid.innerHTML = "";
+      for (const w of wallets) {
+        let bal = "—";
+        try {
+          if (w.symbol === "BTC") {
+            const r = await fetch(`https://api.blockchair.com/bitcoin/dashboards/address/${encodeURIComponent(w.address)}`);
+            const j = await r.json(); bal = (j.data[w.address].balance / 1e8).toFixed(6);
+          } else if (w.symbol === "ETH") {
+            const r = await fetch(`https://api.blockchair.com/ethereum/dashboards/address/${encodeURIComponent(w.address)}`);
+            const j = await r.json(); bal = (j.data[w.address].balance / 1e18).toFixed(6);
+          }
+        } catch {}
+        grid.innerHTML += `
+          <div class="wallet-card">
+            <div class="left"><div class="icon">${w.icon}</div><div class="meta"><b>${esc(w.label)}</b><span>${esc(w.symbol)} · ${esc(w.address.slice(0,12))}…</span></div></div>
+            <div class="balance">${bal === "—" ? "—" : bal}</div>
+          </div>`;
+      }
+    }
+
+    /* ── orders ── */
+    function renderOrders() {
+      const el = $("#orderList");
+      $("#ocount").textContent = `(${orders.length})`;
+      el.innerHTML = orders.map(o => `
+        <div class="rowcard">
+          <div class="info">
+            <b>${esc(o.product_name || o.product)}</b>
+            <span>${esc(o.method)} · $${(o.amount_cents/100).toFixed(2)} · <span class="badge ${o.status}">${o.status}</span> · ${esc(o.buyer_email || "—")}</span>
+            ${o.affiliate_id ? `<br><span class="badge" style="margin-top:4px">Affiliate: ${esc(o.affiliate_email || o.affiliate_id)} · comm $${(o.commission_cents/100).toFixed(2)}</span>` : ""}
+          </div>
+          <button class="btn ${o.status==="paid" ? "btn-ok":"btn-ghost"} btn-sm" data-pay="${esc(o.id)}">${o.status==="paid" ? "Paid ✓" : "Mark paid"}</button>
+          <button class="btn btn-deny btn-sm" data-del="${esc(o.id)}">Delete</button>
+        </div>`).join("");
+      el.querySelectorAll("[data-pay]").forEach(b => b.onclick = () => markPaid(b.dataset.pay));
+      el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => delOrder(b.dataset.del));
+    }
+    async function markPaid(id) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      const { error } = await supabase.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", id);
+      if (error) return toast(error.message, "err");
+      addNotif(`Order ${id} marked paid`);
+      toast("Paid ✓ — buyer can download + commission credited", "ok");
+      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      orders = data || []; renderOrders(); renderNotifs();
+    }
+    async function delOrder(id) {
+      if (!confirm("Delete order?")) return;
+      await supabase.from("orders").delete().eq("id", id);
+      toast("Deleted ✓", "ok");
+      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      orders = data || []; renderOrders();
+    }
+    $("#addOrder").onclick = async () => {
+      const buyer = $("#oBuyer").value.trim();
+      if (!buyer) return toast("Buyer required", "err");
+      const o = {
+        id: crypto.randomUUID(), buyer_email: buyer, product_name: $("#oProduct").value.trim(),
+        amount_cents: Math.round(Number($("#oAmount").value || 0) * 100), currency: "USD",
+        method: $("#oMethod").value, status: "pending", created_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("orders").insert(o);
+      if (error) return toast(error.message, "err");
+      addNotif(`New order ${o.id}`);
+      toast("Order recorded ✓", "ok");
+      ["oBuyer","oProduct","oAmount"].forEach(i => $("#"+i).value = "");
+      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      orders = data || []; renderOrders();
+    };
+
+    /* ── affiliates ── */
+    function renderAffiliates() {
+      const el = $("#affiliateList");
+      $("#acount").textContent = `(${affiliates.length})`;
+      el.innerHTML = affiliates.map(a => `
+        <div class="rowcard">
+          <div class="info">
+            <b>${esc(a.email)}</b>
+            <span>${esc(a.referral_code)} · rate ${a.commission_rate}% · balance $${(a.balance_cents/100).toFixed(2)}</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-copy="${esc(a.referral_code)}">Copy link</button>
+        </div>`).join("");
+      el.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
+        navigator.clipboard.writeText(`${location.origin}#/product?ref=${b.dataset.copy}`);
+        toast("Affiliate link copied", "ok");
+      });
+    }
+    $("#setRate").onclick = async () => {
+      const email = $("#aEmail").value.trim();
+      const rate = Number($("#aRate").value || 10);
+      const { error } = await supabase.from("profiles").update({ commission_rate: rate }).eq("email", email);
+      if (error) return toast(error.message, "err");
+      toast("Rate updated ✓", "ok");
+      const { data: aff } = await supabase.from("profiles").select("*").eq("role", "affiliate");
+      affiliates = aff || []; renderAffiliates();
+    };
+
+    /* ── notifications ── */
+    function addNotif(text) {
+      notifs.unshift({ id: "n-" + Date.now(), text, at: new Date().toISOString(), read: false });
+      if (notifs.length > 50) notifs.pop();
+      renderNotifs();
+      updateBell();
+      try { new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play().catch(() => {}); } catch {}
+    }
+    function renderNotifs() {
+      const el = $("#notifList");
+      const unread = notifs.filter(n => !n.read).length;
+      document.querySelectorAll(".notif-badge").forEach(b => b.textContent = unread);
+      el.innerHTML = notifs.slice(0, 10).map(n => `
+        <div class="rowcard" style="padding:10px 14px">
+          <span class="badge ${n.read ? "paid" : "pending"}">${n.read ? "read" : "new"}</span>
+          <div class="info" style="flex:1"><span>${esc(n.text)}</span><div style="font-size:11px;color:var(--dim)">${new Date(n.at).toLocaleString()}</div></div>
+        </div>`).join("");
+    }
+    function updateBell() {
+      let badge = $("#notifBadge");
+      if (!badge) { badge = document.createElement("span"); badge.id = "notifBadge"; badge.className = "notif-badge"; badge.textContent = "0"; $("#notifBell").appendChild(badge); }
+      badge.textContent = notifs.filter(n => !n.read).length;
+    }
+    $("#notifBell").onclick = () => { notifs.forEach(n => n.read = true); renderNotifs(); updateBell(); };
+    $("#clearNotif").onclick = () => { notifs = []; renderNotifs(); updateBell(); toast("Cleared", "ok"); };
+
+    /* ── demo data ── */
+    $("#wipeDemo").onclick = async () => {
+      if (!confirm("Wipe all demo products and orders?")) return;
+      await supabase.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      await supabase.from("orders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      toast("Wiped ✓", "ok");
+      const { data } = await supabase.from("products").select("*");
+      catalog = data || []; renderProducts();
+      const { data: ord } = await supabase.from("orders").select("*");
+      orders = ord || []; renderOrders();
+    };
+    $("#restoreDemo").onclick = async () => {
+      const demo = [
+        { name: "Nexus Suite", category: "app", tagline: "All-in-one workspace", description: "Offline-first notes.", how: "Unzip and run.", price_cents: 4900, commission_rate: 10, currency: "USD", image_url: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Offline sync"], featured: true },
+        { name: "Forge CMS", category: "system", tagline: "Headless CMS", description: "Lightweight headless content system.", how: "Deploy anywhere.", price_cents: 12900, commission_rate: 15, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["REST + GraphQL"], featured: false },
+        { name: "Pulse Dashboard", category: "project", tagline: "Realtime analytics", description: "Analytics dashboard source.", how: "Brand and deploy.", price_cents: 8900, commission_rate: 20, currency: "USD", image_url: "https://images.unsplash.com/photo-1551288049-b0da444d4171?w=800&q=80", screenshots: [], docs: [], download_url: "", features: ["Realtime charts"], featured: false },
+      ];
+      for (const p of demo) await supabase.from("products").insert(p);
+      toast("Demo restored ✓", "ok");
+      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      catalog = data || []; renderProducts();
+    };
+
+    /* ── dashboard ── */
+    function renderDashboard() {
+      const totalSales = orders.reduce((s, o) => s + (o.status === "paid" ? o.amount_cents : 0), 0);
+      const totalComm = orders.reduce((s, o) => s + (o.status === "paid" ? o.commission_cents : 0), 0);
+      document.querySelector("#tab-dashboard .grid3").innerHTML = `
+        <div class="wallet-card"><div class="left"><div class="icon">💰</div><div class="meta"><b>Total sales</b><span>All time</span></div></div><div class="balance">$${(totalSales/100).toFixed(2)}</div></div>
+        <div class="wallet-card"><div class="left"><div class="icon">🤝</div><div class="meta"><b>Commissions paid out</b><span>To affiliates</span></div></div><div class="balance">$${(totalComm/100).toFixed(2)}</div></div>
+        <div class="wallet-card"><div class="left"><div class="icon">📦</div><div class="meta"><b>Products live</b><span>In catalog</span></div></div><div class="balance">${catalog.length}</div></div>`;
+      refreshWalletBalances();
+    }
+
+    /* ── toast ── */
+    function toast(msg, cls = "") {
+      document.querySelectorAll(".toastbox").forEach(t => t.remove());
+      const d = document.createElement("div");
+      d.className = "toastbox " + cls; d.textContent = msg;
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 3400);
+    }
+
+    $("#refreshOrders").onclick = () => { loadAll(); toast("Refreshed", "ok"); };
+
+  </script>
+</body>
+</html>
