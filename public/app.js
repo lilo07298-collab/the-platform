@@ -86,7 +86,6 @@ async function init() {
     renderPickers();
     renderFilters();
     renderGrids();
-    setupRouter();
     routeTo(window.location.hash || "#/");
     initChat();
   } catch (e) {
@@ -186,6 +185,24 @@ function routeTo(hash) {
   else { routeTo("#/"); }
   window.scrollTo(0, 0);
 }
+
+/* Immediate boot: navigation works before async data loads */
+(function boot() {
+  setupRouter();
+  routeTo(window.location.hash || "#/");
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href^='#']");
+    if (a) { e.preventDefault(); routeTo(a.getAttribute("href")); return; }
+    const card = e.target.closest(".card");
+    if (card && card.dataset.id) { routeTo("#/product/" + card.dataset.id); return; }
+    const lang = e.target.closest("[data-lang]");
+    if (lang) { setLang(lang.dataset.lang); return; }
+    const cur = e.target.closest("[data-cur]");
+    if (cur) { setCurr(cur.dataset.cur); return; }
+    const cat = e.target.closest("[data-cat]");
+    if (cat) { state.filter = cat.dataset.cat; renderFilters(); renderGrids(); return; }
+  });
+})();
 
 function renderHome() { renderGrids(); }
 function renderFilters() {
