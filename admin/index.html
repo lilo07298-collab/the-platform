@@ -72,6 +72,12 @@
     .toastbox.ok { border-color: rgba(34,197,94,.5); }
     .toastbox.err { border-color: rgba(244,63,94,.5); }
     @keyframes up { from { opacity: 0; transform: translate(-50%, 10px); } }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 60; backdrop-filter: blur(4px); }
+    .modal-card { width: min(92vw, 520px); height: min(72vh, 560px); background: var(--panel); border: 1px solid var(--line); border-radius: 16px; position: fixed; top: 7vh; left: 50%; transform: translateX(-50%); z-index: 61; display: flex; flex-direction: column; box-shadow: 0 20px 60px -10px rgba(0,0,0,.8); }
+    .modal-header { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 15px; }
+    #chatLog { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; background: var(--panel2); }
+    .chat-input-row { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--panel); }
+    .chat-input-row input { flex: 1; }
     .file-hint { font-size: 12px; color: var(--dim); margin-top: 6px; }
     .danger-zone { background: rgba(244,63,94,.08); border: 1px dashed rgba(244,63,94,.35); border-radius: 14px; padding: 16px; margin-top: 24px; }
     @media (max-width: 700px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
@@ -238,6 +244,16 @@
           <button class="btn btn-deny" id="wipeDemo">Delete demo data</button>
           <button class="btn btn-ghost" id="restoreDemo">Restore demo data</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ADMIN CHAT MODAL -->
+    <section id="chatModal" class="hidden">
+      <div class="modal-backdrop" onclick="closeChat()"></div>
+      <div class="modal-card">
+        <div class="modal-header"><span>Support chat</span><button class="btn btn-ghost btn-sm" id="chatClose">Close</button></div>
+        <div id="chatLog"></div>
+        <div class="chat-input-row"><input id="chatMsgIn" type="text" placeholder="Type a reply…" /><button class="btn btn-primary btn-sm" id="chatMsgSend">Send</button></div>
       </div>
     </section>
   </main>
@@ -634,6 +650,38 @@
       document.body.appendChild(d);
       setTimeout(() => d.remove(), 3400);
     }
+
+    let chatSeen = new Set();
+    async function refreshChat() {
+      const { data: uData } = await supabase.rpc("chat_unread");
+      const u = Number(Array.isArray(uData) ? uData[0] : uData || 0) || 0;
+      const badge = $("#notifBadge"); badge.textContent = u > 0 ? u : 0;
+      const { data } = await supabase.rpc("chat_list");
+      const arr = Array.isArray(data) ? data : [];
+      const el = $("#chatLog"); let changed = false;
+      for (const r of arr) {
+        if (!chatSeen.has(r.id)) { chatSeen.add(r.id); changed = true;
+          const mine = r.from_role === "staff";
+          const div = document.createElement("div");
+          div.className = `msg msg-${mine ? "me" : "them"}`;
+          div.innerHTML = `<div class="bubble ${mine ? "me" : "them"}">${esc(r.body)}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px">${new Date(r.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>`;
+          el.appendChild(div);
+        }
+      }
+      if (changed) { el.scrollTop = el.scrollHeight; await supabase.rpc("chat_mark_read"); }
+    }
+    function openChat() { $("#chatModal").classList.remove("hidden"); refreshChat(); }
+    function closeChat() { $("#chatModal").classList.add("hidden"); }
+    $("#chatClose").onclick = closeChat;
+    $("#chatMsgSend").onclick = async () => {
+      const v = $("#chatMsgIn").value.trim(); if (!v) return;
+      await supabase.rpc("chat_send", { p_from: "staff", p_body: v, p_name: sessionStorage.getItem("pn_staff_email") || "Staff" });
+      $("#chatMsgIn").value = ""; refreshChat();
+    };
+    $("#chatMsgIn").onkeypress = e => { if (e.key === "Enter") $("#chatMsgSend").click(); };
+    $("#notifBell").onclick = () => openChat();
+    setInterval(refreshChat, 4000);
 
     $("#refreshOrders").onclick = () => { loadAll(); toast("Refreshed", "ok"); };
   </script>

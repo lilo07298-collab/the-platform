@@ -487,23 +487,27 @@ function setupCommissioner() {
 }
 
 function initChat() {
-  const cfg = state.payments || {};
-  const url = (cfg.chat_ws || "").replace(/\/$/, "");
-  const msgs = $("#chatMsgs");
-  const input = $("#chatIn");
-  const send = $("#chatSend");
-  if (!url) {
-    msgs.innerHTML = `<div class="msg msg-them"><div class="bubble them">Chat backend isn't configured yet. Contact us via the links below.</div></div>`;
-    send.disabled = true; input.disabled = true;
-    return;
+  const msgs = $("#chatMsgs"); const input = $("#chatIn"); const send = $("#chatSend");
+  const seen = new Set();
+  async function refresh() {
+    const { data } = await supabase.rpc("chat_list");
+    const rows = Array.isArray(data) ? data : [];
+    let changed = false;
+    for (const r of rows) {
+      if (!seen.has(r.id)) { seen.add(r.id); changed = true;
+        const div = document.createElement("div");
+        div.className = `msg msg-${r.from_role === "client" ? "me" : "them"}`;
+        const name = r.from_name ? `<div class="bubble-name">${esc(r.from_name)}</div>` : "";
+        div.innerHTML = name + `<div class="bubble ${r.from_role === "client" ? "me" : "them"}">${esc(r.body)}</div>`;
+        msgs.appendChild(div);
+      }
+    }
+    if (changed) msgs.scrollTop = msgs.scrollHeight;
+    if (changed && rows.length) await supabase.rpc("chat_mark_read");
   }
-  try {
-    state.ws = new WebSocket(url);
-    state.ws.onopen = () => addSys("Connected to support.");
-    state.ws.onmessage = ev => addThem(ev.data);
-    state.ws.onclose = () => addSys("Disconnected.");
-  } catch { addSys("Chat unavailable."); }
-  send.onclick = () => { const v = input.value.trim(); if (!v || !state.ws || state.ws.readyState !== 1) return; addMe(v); state.ws.send(JSON.stringify({ from: "client", text: v })); input.value = ""; };
+  refresh();
+  setInterval(refresh, 2500);
+  send.onclick = async () => { const v = input.value.trim(); if (!v) return; await supabase.rpc("chat_send", { p_from: "client", p_body: v }); input.value = ""; refresh(); };
   input.onkeypress = e => { if (e.key === "Enter") send.click(); };
 }
 function addMe(t) { addMsg("me", t); }

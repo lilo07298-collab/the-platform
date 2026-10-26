@@ -280,3 +280,5 @@ body::before {
   .checkout-card { padding: 22px; }
   .chat-shell { height: 60vh; }
 }
+
+.bubble-name { font-size: 10px; color: var(--dim); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .05em; }
