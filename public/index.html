@@ -168,6 +168,23 @@
             <input id="commLink" type="text" readonly style="width:100%;padding:10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);" />
             <button class="btn btn-ghost btn-block mt" id="commCopy">Copy link</button>
           </div>
+          <div class="formcard" style="margin-top:24px">
+            <h3 style="font-size:15px;margin-bottom:10px">Track earnings</h3>
+            <label>Your registered email</label><input id="affTrackEmail" type="email" placeholder="you@example.com" />
+            <div class="actions" style="display:flex;gap:10px">
+              <button class="btn btn-primary" id="affTrackBtn">Check balance</button>
+            </div>
+            <div id="affTrackResult" class="mt"></div>
+          </div>
+          <div class="formcard">
+            <h3 style="font-size:15px;margin-bottom:10px">Request payout</h3>
+            <div class="grid2">
+              <div><label>Your registered email</label><input id="affPayEmail" type="email" placeholder="you@example.com" /></div>
+              <div><label>Amount (USD cents)</label><input id="affPayAmount" type="number" min="1" value="100" /></div>
+            </div>
+            <div class="actions"><button class="btn btn-primary btn-block" id="affPayBtn">Request payout</button></div>
+            <div id="affPayResult" class="mt"></div>
+          </div>
         </div>
       </div>
     </section>

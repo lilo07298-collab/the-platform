@@ -454,6 +454,36 @@ function setupCommissioner() {
     $("#commCopy").onclick = () => { navigator.clipboard.writeText(link); toast("Link copied", "ok"); };
     toast("Registered as commissioner ✓", "ok");
   };
+  $("#commCopy").onclick = () => {
+    const link = $("#commLink").value || localStorage.getItem("pinc_comm_link");
+    navigator.clipboard.writeText(link);
+    toast("Link copied", "ok");
+  };
+
+  const affEmail = $("#affTrackEmail"); const affResult = $("#affTrackResult");
+  $("#affTrackBtn").onclick = async () => {
+    const email = affEmail.value.trim();
+    if (!email || email.indexOf("@") < 1) return toast("Enter your registered email", "err");
+    const { data, error } = await supabase.rpc("affiliate_status", { p_email: email });
+    if (error) return toast(error.message, "err");
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.error) return toast(row ? row.error : "Not found", "err");
+    const dollars = (Number(row.balance_cents || 0) / 100).toFixed(2);
+    affResult.innerHTML = `<div class="pay-note">Balance: <strong>$${dollars}</strong> · Code: <strong class="mono">${esc(row.referral_code || "")}</strong></div>
+      <a class="btn btn-primary btn-block mt" href="${location.origin}/?ref=${esc(row.referral_code || "")}">Referral link</a>`;
+  };
+  const pEmail = $("#affPayEmail"); const pAmt = $("#affPayAmount"); const pResult = $("#affPayResult");
+  $("#affPayBtn").onclick = async () => {
+    const email = pEmail.value.trim(); const amt = Number(pAmt.value || 0);
+    if (!email || email.indexOf("@") < 1) return toast("Enter your registered email", "err");
+    if (!amt || amt <= 0) return toast("Enter a valid amount", "err");
+    const { data, error } = await supabase.rpc("request_payout", { p_email: email, p_amount_cents: amt });
+    if (error) return toast(error.message, "err");
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.error) return toast(row ? row.error : "Request failed", "err");
+    pResult.innerHTML = `<div class="pay-note">✅ Payout requested — $${(amt/100).toFixed(2)}. Paid out by staff within 24h.</div>`;
+    toast("Payout requested ✓", "ok");
+  };
 }
 
 function initChat() {

@@ -217,6 +217,10 @@
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--dim)">Affiliates / Commissioners <span id="acount"></span></h3>
         <div id="affiliateList"></div>
         <div class="formcard" style="margin-top:14px">
+          <h3 style="font-size:15px;margin-bottom:10px">Payout requests <span id="pcount"></span></h3>
+          <div id="payoutList"></div>
+        </div>
+        <div class="formcard" style="margin-top:14px">
           <h3>Set commission rate for an affiliate</h3>
           <div class="grid2">
             <div><label>Affiliate email</label><input id="aEmail" placeholder="commissioner@example.com" /></div>
@@ -245,7 +249,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const $ = (s) => document.querySelector(s);
     const CAT = { system: "sys", product: "product", app: "app", project: "project" };
-    let catalog = [], payments = null, orders = [], affiliates = [], products = [], editingId = null, notifs = [];
+    let catalog = [], payments = null, orders = [], affiliates = [], payouts = [], products = [], editingId = null, notifs = [];
     const esc = (s = "") => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
@@ -287,13 +291,15 @@
         supabase.from("payments").select("*").maybeSingle(),
         supabase.rpc("staff_list_orders", { p_token: myToken }),
         supabase.rpc("staff_list_profiles", { p_token: myToken }),
+        supabase.rpc("staff_list_payouts", { p_token: myToken }),
       ]);
       catalog = prodRes.data || [];
       payments = payRes.data || { id: 1, payPal: {}, crypto: [], contact: {}, brand: {}, chat_ws: "" };
       payments.id = 1;
       orders = ordRes.data || [];
       affiliates = (profRes.data || []).filter(x => x.role === "affiliate");
-      renderTabs(); renderProducts(); fillPayments(); renderWallets(); renderOrders(); renderAffiliates(); renderDashboard();
+      payouts = payoutRes.data || [];
+      renderTabs(); renderProducts(); fillPayments(); renderWallets(); renderOrders(); renderAffiliates(); renderPayouts(); renderDashboard();
     }
 
     function renderTabs() {
@@ -520,6 +526,37 @@
         navigator.clipboard.writeText(`${location.origin}/?ref=${b.dataset.copy}`);
         toast("Affiliate link copied", "ok");
       });
+    }
+    function renderPayouts() {
+      const el = $("#payoutList");
+      $("#pcount").textContent = `(${payouts.length})`;
+      el.innerHTML = payouts.map(o => `
+        <div class="rowcard">
+          <div class="info">
+            <b>${esc(o.affiliate_email)}</b>
+            <span>$${(o.amount_cents/100).toFixed(2)} · <span class="badge ${o.status}">${o.status}</span> · ${new Date(o.created_at).toLocaleDateString()}</span>
+          </div>
+          ${o.status === "pending" ? `
+          <button class="btn btn-ok btn-sm" data-pay="${esc(o.id)}">Pay</button>
+          <button class="btn btn-deny btn-sm" data-rej="${esc(o.id)}">Reject</button>` : ""}
+        </div>`).join("");
+      el.querySelectorAll("[data-pay]").forEach(b => b.onclick = () => payPayout(b.dataset.pay));
+      el.querySelectorAll("[data-rej]").forEach(b => b.onclick = () => rejectPayout(b.dataset.rej));
+    }
+    async function payPayout(id) {
+      const { error } = await supabase.rpc("staff_pay_payout", { p_token: myToken, p_id: id });
+      if (error) return toast(error.message, "err");
+      toast("Payout paid ✓", "ok");
+      const { data } = await supabase.rpc("staff_list_payouts", { p_token: myToken });
+      payouts = data || []; renderPayouts();
+    }
+    async function rejectPayout(id) {
+      if (!confirm("Reject this payout request?")) return;
+      const { error } = await supabase.rpc("staff_reject_payout", { p_token: myToken, p_id: id });
+      if (error) return toast(error.message, "err");
+      toast("Rejected", "ok");
+      const { data } = await supabase.rpc("staff_list_payouts", { p_token: myToken });
+      payouts = data || []; renderPayouts();
     }
     $("#setRate").onclick = async () => {
       const email = $("#aEmail").value.trim();
